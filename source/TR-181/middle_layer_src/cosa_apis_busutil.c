@@ -316,6 +316,7 @@ CosaGetParamValueBool
     return g_GetParamValueBool(g_pDslhDmlAgent, pParamName);
 }
 
+
 /**********************************************************************
 
     prototype:
@@ -355,7 +356,29 @@ CosaGetInstanceNumberByIndex
     return g_GetInstanceNumberByIndex(g_pDslhDmlAgent, pObjName, ulIndex);
 }
 
+ANSC_STATUS
+COSAGetParamValueByPathName
+    (
+        void*                       bus_handle,
+        parameterValStruct_t        *val,
+        ULONG                       *parameterValueLength
+    )
+{
+    return g_GetParamValueByPathNameProc(bus_handle,val,parameterValueLength);	
+   
+}
 
+#if 0
+ANSC_STATUS
+COSASetParamValueByPathName
+    (
+        void*                      bus_handle,
+        parameterValStruct_t       *val
+    )
+{
+    return g_SetParamValueByPathNameProc(bus_handle,val);
+}
+#endif
 /**********************************************************************
 
     prototype:
@@ -384,6 +407,7 @@ CosaGetRegistryRootFolder
     return g_GetRegistryRootFolder(g_pDslhDmlAgent);
 }
 
+#ifndef CCSP_RBUS_MIGRATION
 /**********************************************************************
 
     prototype:
@@ -443,6 +467,7 @@ CosaCOSARepopulateTable
 {
     return g_COSARepopulateTable(g_pDslhDmlAgent, objName);
 }
+#endif
 
 #if  defined(ENABLE_ETHERNET_TR181_REMOTE_CALL)
 static ANSC_STATUS RdkBus_GetParamValues( char *pComponent, char *pBus, char *pParamName, char *pReturnVal )

@@ -1709,7 +1709,7 @@ CosaDmlDcSetErouterEnabled
 * @retval NULL if thread creation fails.
 *
 */
-void* CosaDmlDcRebootWifi(ANSC_HANDLE   hContext);
+extern void* CosaDmlDcRebootWifi(ANSC_HANDLE   hContext);
 
 /**
 * @brief Restart the router in a separate thread.
@@ -1723,7 +1723,7 @@ void* CosaDmlDcRebootWifi(ANSC_HANDLE   hContext);
 * @retval NULL if thread creation fails.
 *
 */
-void* CosaDmlDcRestartRouter(void* arg);
+extern void* CosaDmlDcRestartRouter(void* arg);
 
 /**
 * @brief Save WiFi health status into NVRAM.
@@ -1733,7 +1733,7 @@ void* CosaDmlDcRestartRouter(void* arg);
 * @return None.
 *
 */
-void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  );
+extern void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  );
 
 /**
 * @brief Check and get device properties entry.
@@ -1749,7 +1749,7 @@ void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  );
 * @retval non-zero for failure.
 *
 */
-int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDevicePropContent );
+extern int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDevicePropContent );
 
 #ifndef PON_GATEWAY
 /**

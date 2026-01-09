@@ -95,18 +95,14 @@
 //#include "cosa_moca_internal.h"
 #include "cosa_time_internal.h"
 #include "cosa_userinterface_internal.h"
+#include "cosa_ppp_internal.h"
 #include "cosa_bridging_internal.h"
 #include "cosa_upnp_internal.h"
+#include "cosa_interfacestack_internal.h"
 /*#include "cosa_diagnostic_apis.h"*/
 #include "cosa_x_cisco_com_devicecontrol_internal.h"
-
-#if !defined (RESOURCE_OPTIMIZATION)
 #include "cosa_ipv6rd_internal.h"
 #include "cosa_x_cisco_com_mld_internal.h"
-#include "cosa_ppp_internal.h"
-#include "cosa_interfacestack_internal.h"
-#endif
-
 #include "cosa_x_cisco_com_multilan_apis.h"
 #if defined(DDNS_BROADBANDFORUM)
 #include "cosa_dynamicdns_apis.h"
@@ -122,7 +118,7 @@
 #include "cosa_x_cisco_com_rlog_internal.h"
 #include "cosa_x_cisco_com_hotspot_internal.h"
 #ifndef NO_WIFI_FEATURE_SUPPORT
-#include "libHotspotApi.h"
+/*#include "libHotspotApi.h" */
 #endif
 #include <telemetry_busmessage_sender.h>
 
@@ -140,20 +136,16 @@
 #include "cosa_common_util.h"
 #endif
 
-#include "cosa_x_rdk_features_internal.h"
-
-#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined (RBUS_WAN_IP)
+#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_)
 #include "cosa_rbus_handler_apis.h"
 #endif
 #if defined (WIFI_MANAGE_SUPPORTED)
 #include "cosa_managedwifi_webconfig_apis.h"
 #endif /*WIFI_MANAGE_SUPPORTED*/
 
-#if defined(SPEED_BOOST_SUPPORTED)
-#include "speedboost_apis.h"
-#include "speedboost_scheduler_apis.h"
-#endif /*SPEED_BOOST_SUPPORTED*/
-static void CheckAndSetRebootReason();
+#include "plugin_main_rbus.h"
+
+//static void CheckAndSetRebootReason();
 
 #if defined(_PLATFORM_RASPBERRYPI_)
 extern int sock;
@@ -164,9 +156,8 @@ ANSC_HANDLE CosaGRECreate(VOID);
 ANSC_STATUS CosaGRERemove(ANSC_HANDLE hThisObject);
 #endif
 
+#if 0
 /*PCOSA_DIAG_PLUGIN_INFO             g_pCosaDiagPluginInfo;*/
-COSAGetParamValueByPathNameProc    g_GetParamValueByPathNameProc;
-COSASetParamValueByPathNameProc    g_SetParamValueByPathNameProc;
 COSAGetParamValueStringProc        g_GetParamValueString;
 COSAGetParamValueUlongProc         g_GetParamValueUlong;
 COSAGetParamValueIntProc           g_GetParamValueInt;
@@ -178,24 +169,35 @@ COSASetParamValueBoolProc          g_SetParamValueBool;
 COSAGetInstanceNumbersProc         g_GetInstanceNumbers;
 
 COSAValidateHierarchyInterfaceProc g_ValidateInterface;
-COSAGetHandleProc                  g_GetRegistryRootFolder;
-COSAGetInstanceNumberByIndexProc   g_GetInstanceNumberByIndex;
 COSAGetInterfaceByNameProc         g_GetInterfaceByName;
 COSAGetHandleProc                  g_GetMessageBusHandle;
-COSAGetSubsystemPrefixProc         g_GetSubsystemPrefix;
 PCCSP_CCD_INTERFACE                g_pPnmCcdIf;
-ANSC_HANDLE                        g_MessageBusHandle;
-char*                              g_SubsystemPrefix;
 COSARegisterCallBackAfterInitDmlProc  g_RegisterCallBackAfterInitDml;
 COSARepopulateTableProc            g_COSARepopulateTable;
+#endif
 
+COSAGetHandleProc                  g_GetRegistryRootFolder;
+COSAGetSubsystemPrefixProc         g_GetSubsystemPrefix;
+ANSC_HANDLE                        g_MessageBusHandle;
+char*                              g_SubsystemPrefix;
+extern char 			   g_Subsystem[32];
+COSAGetParamValueStringProc        g_GetParamValueString;
+COSAGetParamValueUlongProc         g_GetParamValueUlong;
+COSAGetParamValueIntProc           g_GetParamValueInt;
+COSAGetParamValueBoolProc          g_GetParamValueBool;
+COSASetParamValueStringProc        g_SetParamValueString;
+COSASetParamValueUlongProc         g_SetParamValueUlong;
+COSASetParamValueIntProc           g_SetParamValueInt;
+COSASetParamValueBoolProc          g_SetParamValueBool;
+COSAGetInstanceNumbersProc         g_GetInstanceNumbers;
+COSAGetInstanceNumberByIndexProc   g_GetInstanceNumberByIndex;
+COSAGetParamValueByPathNameProc    g_GetParamValueByPathNameProc;
+COSASetParamValueByPathNameProc    g_SetParamValueByPathNameProc;
 
 ANSC_HANDLE CosaDhcpv6Create(VOID);
 ANSC_STATUS CosaDhcpv6Remove(ANSC_HANDLE hThisObject);
-#if !defined (RESOURCE_OPTIMIZATION)
 ANSC_HANDLE CosaNeighdiscCreate(VOID);
 ANSC_STATUS CosaNeighdiscRemove(ANSC_HANDLE hThisObject);
-#endif
 ANSC_HANDLE CosaGreTunnelCreate ();
 ANSC_HANDLE CosaCGreCreate(VOID);
 ANSC_STATUS CosaCGreRemove(ANSC_HANDLE hThisObject);
@@ -203,7 +205,7 @@ ANSC_STATUS CosaGreTunnelRemove( ANSC_HANDLE hThisObject );
 ANSC_HANDLE CosaGreCreate(VOID);
 ANSC_STATUS CosaGreRemove(ANSC_HANDLE hThisObject);
 void initparodusTask();
-static void SetAutoreboot( ANSC_HANDLE  hThisObject);
+//static void SetAutoreboot( ANSC_HANDLE  hThisObject);
 void *GetRegistryRootFolder(void *hDmlAgent);
 
 /**********************************************************************
@@ -289,6 +291,7 @@ CosaBackEndManagerInitialize
         ANSC_HANDLE                 hThisObject
     )
 {
+ 
     ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
     PCOSA_BACKEND_MANAGER_OBJECT  pMyObject    = (PCOSA_BACKEND_MANAGER_OBJECT)hThisObject;
 #if defined(_PLATFORM_RASPBERRYPI_)
@@ -301,31 +304,29 @@ CosaBackEndManagerInitialize
 
     AnscTraceWarning(("%s...\n", __FUNCTION__));
     CcspTraceWarning(("RDKB_SYSTEM_BOOT_UP_LOG : PandM DM initialize...\n"));
-    printf("PandM DM initialize...\n");
+    if (pMyObject)
+        printf("PandM DM initialize...\n");
 
     /* Create all object */
-    pMyObject->hFeatures     = (ANSC_HANDLE)CosaFeaturesCreate();
-    AnscTraceWarning(("  CosaFeaturesCreate done!\n"));
-
-#if !defined(FEATURE_DISABLE_TR181)
+#if 0
     pMyObject->hNat           = (ANSC_HANDLE)CosaNatCreate();
     AnscTraceWarning(("  CosaNatCreate done!\n"));
-#if !defined (RESOURCE_OPTIMIZATION)
-    pMyObject->hProcStatus    = (ANSC_HANDLE)CosaProcStatusCreate();
+    pMyObject->hProcStatus    = (ANSC_HANDLE)CosaProcStatusCreate();    
     AnscTraceWarning(("  CosaProcStatusCreate done!\n"));
-#endif
-#endif
+
     pMyObject->hDeviceInfo    = (ANSC_HANDLE)CosaDeviceInfoCreate();
     AnscTraceWarning(("  CosaDeviceInfoCreate done!\n"));
+#endif
 
-#if !defined(FEATURE_DISABLE_TR181)
+    
+   // pMyObject->hUsers         = (ANSC_HANDLE)CosaUsersCreate();
+   // AnscTraceWarning(("  CosaUsersCreate done!\n"));
+#if 0
     pMyObject->hUserinterface = (ANSC_HANDLE)CosaUserinterfaceCreate();
     AnscTraceWarning(("  CosaUserinterfaceCreate done!\n"));
     pMyObject->hEthernet      = (ANSC_HANDLE)CosaEthernetCreate();
     AnscTraceWarning(("  CosaEthernetCreate done!\n"));
 
-    pMyObject->hUsers         = (ANSC_HANDLE)CosaUsersCreate();
-    AnscTraceWarning(("  CosaUsersCreate done!\n"));
 #if !defined(DDNS_BROADBANDFORUM)
     pMyObject->hDdns          = (ANSC_HANDLE)CosaDdnsCreate();
     AnscTraceWarning(("  CosaDdnsCreate done!\n"));
@@ -340,8 +341,12 @@ CosaBackEndManagerInitialize
     AnscTraceWarning(("  CosaSecurityCreate done!\n"));
     pMyObject->hIP            = (ANSC_HANDLE)CosaIPCreate();
     AnscTraceWarning(("  CosaIPCreate done!\n"));
+#ifdef FEATURE_RDKB_DHCP_MANAGER
+    AnscTraceWarning(("  CosaDhcpv4Create not done will be created from dhcp manager!\n"));
+#else
     pMyObject->hDhcpv4        = (ANSC_HANDLE)CosaDhcpv4Create();
     AnscTraceWarning(("  CosaDhcpv4Create done!\n"));
+#endif
     pMyObject->hHosts         = (ANSC_HANDLE)CosaHostsCreate();
     AnscTraceWarning(("  CosaHostsCreate done!\n"));
     pMyObject->hDNS           = (ANSC_HANDLE)CosaDNSCreate();
@@ -350,41 +355,34 @@ CosaBackEndManagerInitialize
     AnscTraceWarning(("  CosaRoutingCreate done!\n"));
     pMyObject->hBridging      = (ANSC_HANDLE)CosaBridgingCreate();
     AnscTraceWarning(("  CosaBridgingCreate done!\n"));
-#if !defined (RESOURCE_OPTIMIZATION)
     pMyObject->hInterfaceStack = (ANSC_HANDLE)CosaIFStackCreate();
     AnscTraceWarning(("  CosaIFStackCreate done!\n"));
-#endif
-
-    // initiatlize the thread to send sync notifcation to webPA when IPv6 prefix , IPV4 and IPv6 ip address change
-    initializeNotificationHandler();
-
 #ifndef FEATURE_RDKB_XDSL_PPP_MANAGER
-#if !defined (RESOURCE_OPTIMIZATION)
     pMyObject->hPPP           = (ANSC_HANDLE)CosaPPPCreate();
     AnscTraceWarning(("  CosaPPPCreate done!\n"));
 #endif
-#endif
 
+#ifdef FEATURE_RDKB_DHCP_MANAGER
+    AnscTraceWarning(("  CosaDhcpv6Create not done will be created from dhcp manager!\n"));
+#else
     pMyObject->hDhcpv6        = (ANSC_HANDLE)CosaDhcpv6Create();
     AnscTraceWarning(("  CosaDhcpv6Create done!\n"));
+#endif
     pMyObject->hDeviceControl  = (ANSC_HANDLE)CosaDeviceControlCreate();
     AnscTraceWarning(("  CosaDeviceControlCreate done!\n"));
-#if !defined (RESOURCE_OPTIMIZATION)
     pMyObject->hIPv6rd        = (ANSC_HANDLE)CosaIPv6rdCreate();
     AnscTraceWarning(("  CosaIPv6rdCreate done!\n"));
-#endif
     pMyObject->hRA            = (ANSC_HANDLE)CosaRACreate();
     AnscTraceWarning(("  CosaRACreate done!\n"));
 #ifdef DSLITE_FEATURE_SUPPORT
     pMyObject->hDslite         = (ANSC_HANDLE)CosaDsliteCreate();
     AnscTraceWarning(("  CosaDsliteCreate done!\n"));
 #endif
-#if !defined (RESOURCE_OPTIMIZATION)
     pMyObject->hNeighdisc     = (ANSC_HANDLE)CosaNeighdiscCreate();
     AnscTraceWarning(("  CosaNeighdiscCreate done!\n"));
     pMyObject->hMld           = (ANSC_HANDLE)CosaMldCreate();
     AnscTraceWarning(("  CosaMldCreate done!\n"));
-#endif
+
     /*
 #ifdef CONFIG_TI_PACM
     pMyObject->hMTA           = (ANSC_HANDLE)CosaMTACreate();
@@ -392,15 +390,11 @@ CosaBackEndManagerInitialize
 #endif
     */
 
-#ifdef SPEED_BOOST_SUPPORTED
-    initializeSpeedBoostStructVal();
-#endif
-
     returnStatus = CosaDmlMlanInit((ANSC_HANDLE)pMyObject, &pMyObject->hMultiLan);
     AnscTraceWarning(("  CosaDmlMlanInit -- status %lu!\n", returnStatus));
 #endif
 
-#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_) && !defined(_COSA_QCA_ARM_)
+#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
     printf("pnm-status is renamed to bring-lan and set in PSM for XB3\n");
 #else
    printf("**************** sysevent set pnm-status up \n");
@@ -414,16 +408,17 @@ if(id != 0)
     send(sock , lxcevt , strlen(lxcevt) , 0 );
 }
 #endif
-   system("sysevent set pnm-status up");
+#if !defined(LAN_MANAGER_SUPPORTED)   
+    system("sysevent set pnm-status up");
+#endif
 #endif
 
-#if !defined(FEATURE_DISABLE_TR181)
+#if 0
     pMyObject->hDiag          = (ANSC_HANDLE)CosaDiagnosticsCreate();
     AnscTraceWarning(("  CosaDiagnosticsCreate done!\n"));
     pMyObject->hTime          = (ANSC_HANDLE)CosaTimeCreate();
     AnscTraceWarning(("  CosaTimeCreate done!\n"));
-
-#if defined(CUSTOM_ULA) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)    
+#if defined(CUSTOM_ULA)     
     pMyObject->hLanMngm          = (ANSC_HANDLE)CosaLanManagementCreate();
 #endif
     AnscTraceWarning(("  CosaLanManagementCreate done!\n"));
@@ -433,13 +428,13 @@ if(id != 0)
     pMyObject->hUpnp          = (ANSC_HANDLE)CosaUpnpCreate();
     AnscTraceWarning(("  CosaUpnpCreate done!\n"));
 
-#endif
     pMyObject->hParentalControl = (ANSC_HANDLE)TR181_ParentalControlCreate();
     AnscTraceWarning(("  CosaParentalControlCreate done - hParentalControl = 0x%p!\n", pMyObject->hParentalControl));
+#endif
     pMyObject->hRLog          = (ANSC_HANDLE)CosaRLogCreate();
     AnscTraceWarning(("  CosaRLogCreate done!\n"));
 
-#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined (RBUS_WAN_IP)
+#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_)
     // Device Control Networking Mode init
     devCtrlRbusInit();
 #endif
@@ -453,7 +448,7 @@ if(id != 0)
 	printf("-- %s %d CosaGreTunnelCreate\n", __func__, __LINE__);
     pMyObject->hTGRE       = (ANSC_HANDLE)CosaGreTunnelCreate();
     AnscTraceWarning(("  CosaGreTunnelCreate done!\n"));	
-    register_callbackHotspot(callbackWCConfirmVap);
+   // register_callbackHotspot(callbackWCConfirmVap);
 	//zqiu<<
     pMyObject->hCGRE           = (ANSC_HANDLE)CosaCGreCreate();
     AnscTraceWarning(("  CosaCGreCreate done!\n"));
@@ -470,8 +465,8 @@ if(id != 0)
 #if CONFIG_CISCO_TRUE_STATIC_IP
     pMyObject->hTSIP          = (ANSC_HANDLE)CosaTSIPCreate();
     AnscTraceWarning(("  CosaTSIPCreate done!\n"));
-#endif    
-
+#endif
+    
 
 #if CFG_USE_Event_Displatch
 
@@ -483,7 +478,7 @@ if(id != 0)
     EvtDispterHandleEventAsync();
 #endif
 
-#endif
+
 
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
     pMyObject->hXpc         = (ANSC_HANDLE)CosaXpcCreate();
@@ -499,6 +494,7 @@ if(id != 0)
     
     AnscTraceWarning(("  Initializing WebConfig Framework done!\n"));
 
+
     printf("PandM DM initialization done!\n");
     CcspTraceWarning(("RDKB_SYSTEM_BOOT_UP_LOG : PandM DM initialization done!\n"));
     //Unknown Reboot Reason 
@@ -510,21 +506,10 @@ if(id != 0)
     initparodusTask();
     SetAutoreboot((ANSC_HANDLE)pMyObject->hDeviceInfo);
 #if defined (WIFI_MANAGE_SUPPORTED)
-    char cAmenityReceived [8] = {0};
-    syscfg_get( NULL, "Is_Amenity_Received", cAmenityReceived, sizeof(cAmenityReceived));
-    CcspTraceWarning(("%s : syscfg get Is_Amenity_Received=%s \n",__FUNCTION__, cAmenityReceived));
-    if(0 != strncmp(cAmenityReceived, "true", 4))
-    {
-        CcspTraceWarning(("%s : Amenity network is not enabled yet , Initialize Manage WiFi from psm details \n",__FUNCTION__));
-        initManageWiFiBacupStruct();
-    }
-
+    initManageWiFiBacupStruct();
 #endif /*WIFI_MANAGE_SUPPORTED*/
+#endif
 
-#if defined (SPEED_BOOST_SUPPORTED)
-    speedBoostSchdeulerInit();
-#endif /*SPEED_BOOST_SUPPORTED*/
-    CcspTraceWarning(("%s : RDKB_SYSTEM_BOOT_UP_LOG : Exit  \n",__FUNCTION__)); 
     return returnStatus;
 }
 
@@ -561,6 +546,7 @@ CosaBackEndManagerRemove
     ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
     PCOSA_BACKEND_MANAGER_OBJECT  pMyObject    = (PCOSA_BACKEND_MANAGER_OBJECT)hThisObject;
 
+#if 0
     /* Remove all objects */
     if ( pMyObject->hMultiLan )
     {
@@ -587,7 +573,7 @@ CosaBackEndManagerRemove
         CosaTimeRemove((ANSC_HANDLE)pMyObject->hTime);
     }
 
-#if defined(CUSTOM_ULA) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined(CUSTOM_ULA)
     if ( pMyObject->hLanMngm )
     {
         CosaLanManagementRemove((ANSC_HANDLE)pMyObject->hLanMngm);
@@ -624,13 +610,10 @@ CosaBackEndManagerRemove
         CosaUsersRemove((ANSC_HANDLE)pMyObject->hUsers);
     }
     
-#if !defined (RESOURCE_OPTIMIZATION)
     if ( pMyObject->hProcStatus )
     {
         COSADmlRemoveProcessInfo((ANSC_HANDLE)pMyObject->hProcStatus);
     }
-#endif
-
 #if !defined(DDNS_BROADBANDFORUM)
     if ( pMyObject->hDdns )
     {
@@ -685,33 +668,26 @@ CosaBackEndManagerRemove
     {
         CosaUpnpRemove((ANSC_HANDLE)pMyObject->hUpnp);
     }
-
-#if !defined (RESOURCE_OPTIMIZATION)
+    
     if ( pMyObject->hInterfaceStack )
     {
         CosaIFStackRemove((ANSC_HANDLE)pMyObject->hInterfaceStack);
     }
-#endif
-
 #ifndef FEATURE_RDKB_XDSL_PPP_MANAGER
-#if !defined (RESOURCE_OPTIMIZATION)
     if ( pMyObject->hPPP )
     {
         CosaPPPRemove((ANSC_HANDLE)pMyObject->hPPP);
     }
-#endif
 #endif
     if ( pMyObject->hDeviceControl )
     {
         CosaDeviceControlRemove((ANSC_HANDLE)pMyObject->hDeviceControl);
     }
 
-#if !defined (RESOURCE_OPTIMIZATION)
     if ( pMyObject->hIPv6rd )
     {
         CosaIPv6rdRemove((ANSC_HANDLE)pMyObject->hIPv6rd);
     }
-#endif
 
     if ( pMyObject->hRA )
     {
@@ -724,8 +700,6 @@ CosaBackEndManagerRemove
         CosaDsliteRemove((ANSC_HANDLE)pMyObject->hDslite);
     }
 #endif
-
-#if !defined (RESOURCE_OPTIMIZATION)
     if ( pMyObject->hNeighdisc )
     {
         CosaNeighdiscRemove((ANSC_HANDLE)pMyObject->hNeighdisc);
@@ -735,7 +709,6 @@ CosaBackEndManagerRemove
     {
         CosaMldRemove((ANSC_HANDLE)pMyObject->hMld);
     }
-#endif
     /*
 #ifdef CONFIG_TI_PACM
     if ( pMyObject->hMTA )
@@ -785,13 +758,14 @@ CosaBackEndManagerRemove
         CosaFileTransferRemove((ANSC_HANDLE)pMyObject->hFileTransfer);
     }
 #endif
-
+#endif
     /* Remove self */
     AnscFreeMemory((ANSC_HANDLE)pMyObject);
 
     return returnStatus;
 }
 
+#if 0
 static void CheckAndSetRebootReason()
 {
     int value = -1;
@@ -871,8 +845,572 @@ static void SetAutoreboot( ANSC_HANDLE  hThisObject)
             {
                 pMyObject->AutoReboot.Enable = FALSE;
                 CcspTraceWarning(("No need to schedule as default value is set to %s \n", buf));
-                CosaDmlScheduleAutoReboot(defualtConfigureDays, FALSE);
             }
          }
     }
 }
+#endif
+void *GetRegistryRootFolder(void *hDmlAgent)
+{
+     PRBUS_DATAMODEL_AGENT_OBJECT    pDslhDmlAgent = (PRBUS_DATAMODEL_AGENT_OBJECT)hDmlAgent;
+     return (void *)pDslhDmlAgent->hIrepFolderCOSA;
+}
+COSAGetHandleProc g_GetRegistryRootFolder = GetRegistryRootFolder;
+
+char *GetSubsystemPrefix(void *hDmlAgent)
+{
+     UNREFERENCED_PARAMETER(hDmlAgent);
+     return g_Subsystem;
+}
+COSAGetSubsystemPrefixProc  g_GetSubsystemPrefix = GetSubsystemPrefix;
+
+ULONG
+GetParamValueUlong(void*                       hDmlAgent,
+		   char*                       pParamName)
+{
+    UNREFERENCED_PARAMETER(hDmlAgent);
+    int size = 0;
+    ULONG result = 0;
+    int ret = 0;
+    char *parameterNames[1] = {};
+    parameterNames[0] = pParamName;
+    parameterValStruct_t **parameterVal = NULL;
+    ret = CcspBaseIf_getParameterValues_rbus( bus_handle,
+                			 NULL,
+                			 NULL,
+                			 parameterNames,
+                			 1,
+                			 &size ,
+                			 &parameterVal
+            				);
+    if (ret == CCSP_SUCCESS && parameterVal[0]->parameterValue)
+    {
+       result = strtoul(parameterVal[0]->parameterValue, NULL, 10);
+       free_parameterValStruct_t (bus_handle, size, parameterVal);
+       parameterVal = NULL;
+    }
+    return result;
+}
+COSAGetParamValueUlongProc         g_GetParamValueUlong = GetParamValueUlong;
+
+int GetParamValueString(void*  hDmlAgent,char* pParamName,char*  pBuffer,
+		        PULONG pulSize)
+{
+    UNREFERENCED_PARAMETER(hDmlAgent);
+    int size = 0;    
+    int result = 0;
+    unsigned long len = 0;
+    int ret = 0;
+    char *parameterNames[1] = {};
+    parameterNames[0] = pParamName;
+    parameterValStruct_t **parameterVal = NULL;
+    ret = CcspBaseIf_getParameterValues_rbus( bus_handle,
+                                         NULL,
+                                         NULL,
+                                         parameterNames,
+                                         1,
+                                         &size ,
+                                         &parameterVal
+                                        );
+    if (ret == CCSP_SUCCESS && parameterVal[0]->parameterValue)
+    {
+       len = strlen(parameterVal[0]->parameterValue);
+
+       if (len >= *pulSize)
+       {
+        // AnscTraceWarning(("GetParamValueString: output buffer too small '%s'\n", pParamName));
+           result = 1;
+       }
+       else
+       {
+           memcpy(pBuffer, parameterVal[0]->parameterValue, len + 1);
+           result = 0;
+           free_parameterValStruct_t (bus_handle, size, parameterVal);
+       	   parameterVal = NULL;
+       }
+
+    }
+
+    /*
+       Warning: inconsisent API. The passed in value is a buffer size, the
+       returned value is a string length (ie one less then the required
+       buffer size).
+    */
+       *pulSize = len;
+
+       return result;
+}
+COSAGetParamValueStringProc        g_GetParamValueString = GetParamValueString;
+
+BOOL GetParamValueBool(void* hDmlAgent,char* pParamName)
+{
+    UNREFERENCED_PARAMETER(hDmlAgent);
+    int size = 0;
+    int ret = 0;
+    char *parameterNames[1] = {};
+    parameterNames[0] = pParamName;
+    parameterValStruct_t **parameterVal = NULL;
+    ret = CcspBaseIf_getParameterValues_rbus( bus_handle,
+                                         NULL,
+                                         NULL,
+                                         parameterNames,
+                                         1,
+                                         &size ,
+                                         &parameterVal
+                                        );
+    if (ret == CCSP_SUCCESS && parameterVal[0]->parameterValue)
+    {	
+       if(!strncmp("True",parameterVal[0]->parameterValue,strlen("True")))
+	  return TRUE;
+    }
+    return FALSE;
+     
+}
+COSAGetParamValueBoolProc          g_GetParamValueBool = GetParamValueBool;
+
+int GetParamValueInt (void* hDmlAgent,char*  pParamName)
+{
+    UNREFERENCED_PARAMETER(hDmlAgent);
+    int size = 0;
+    int result = 0;
+    int ret = 0;
+    char *parameterNames[1] = {};
+    parameterNames[0] = pParamName;
+    parameterValStruct_t **parameterVal = NULL;
+    ret = CcspBaseIf_getParameterValues_rbus( bus_handle,
+                                         NULL,
+                                         NULL,
+                                         parameterNames,
+                                         1,
+                                         &size ,
+                                         &parameterVal
+                                        );
+    if (ret == CCSP_SUCCESS && parameterVal[0]->parameterValue)
+    {
+       result = (int)strtol(parameterVal[0]->parameterValue, NULL, 10);
+       free_parameterValStruct_t (bus_handle, size, parameterVal);
+       parameterVal = NULL;
+    }
+    return result;
+}
+COSAGetParamValueIntProc           g_GetParamValueInt = GetParamValueInt;
+
+ANSC_STATUS SetParamValueUlong (char* pParamName,ULONG ulParamValue)
+{
+    parameterValStruct_t pVal[1];
+    char str[256] = {0};
+    char*                faultParam     = NULL;
+    int                  ret            = 0;
+    CCSP_MESSAGE_BUS_INFO *bus_info     = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+    snprintf(str,sizeof(str),"%lu",ulParamValue);
+    pVal[0].parameterName  = pParamName;
+    pVal[0].parameterValue = str;
+    pVal[0].type           = ccsp_unsignedLong;
+
+    /*?? check writeID need to be set*/
+    ret = CcspBaseIf_setParameterValues_rbus(
+                  bus_handle,
+                  NULL,
+                  NULL,
+                  0,
+                  0,
+                  pVal,
+                  1,
+                  TRUE,
+                  &faultParam
+              );
+
+    if (ret != CCSP_SUCCESS)
+    {
+        CcspTraceError(("%s - %d - Failed to set - Error [%s]\n", __FUNCTION__, __LINE__, faultParam));
+        bus_info->freefunc(faultParam);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+COSASetParamValueUlongProc         g_SetParamValueUlong = SetParamValueUlong;
+
+ANSC_STATUS SetParamValueString (char* pParamName,char* pParamValue)
+{
+    parameterValStruct_t pVal[1];
+    char*                faultParam     = NULL;
+    int                  ret            = 0;
+    CCSP_MESSAGE_BUS_INFO *bus_info     = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+    pVal[0].parameterName  = pParamName;
+    pVal[0].parameterValue = pParamValue;
+    pVal[0].type           = ccsp_string;
+
+    /*?? check writeID need to be set*/
+    ret = CcspBaseIf_setParameterValues_rbus(
+                  bus_handle,
+                  NULL,
+                  NULL,
+                  0,
+                  0,
+                  pVal,
+                  1,
+                  TRUE,
+                  &faultParam
+              );
+
+    if (ret != CCSP_SUCCESS)
+    {
+        CcspTraceError(("%s - %d - Failed to set - Error [%s]\n", __FUNCTION__, __LINE__, faultParam));
+        bus_info->freefunc(faultParam);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+COSASetParamValueStringProc        g_SetParamValueString = SetParamValueString;
+
+ANSC_STATUS SetParamValueInt (char* pParamName,int iParamValue)
+{
+    parameterValStruct_t pVal[1];
+    char str[256] = {0};
+    char*                faultParam     = NULL;
+    int                  ret            = 0;
+    CCSP_MESSAGE_BUS_INFO *bus_info     = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+    snprintf(str,sizeof(str),"%d",iParamValue);
+    pVal[0].parameterName  = pParamName;
+    pVal[0].parameterValue = str;
+    pVal[0].type           = ccsp_int;
+
+    /*?? check writeID need to be set*/
+    ret = CcspBaseIf_setParameterValues_rbus(
+                  bus_handle,
+                  NULL,
+                  NULL,
+                  0,
+                  0,
+                  pVal,
+                  1,
+                  TRUE,
+                  &faultParam
+              );
+
+    if (ret != CCSP_SUCCESS)
+    {
+        CcspTraceError(("%s - %d - Failed to set - Error [%s]\n", __FUNCTION__, __LINE__, faultParam));
+        bus_info->freefunc(faultParam);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+COSASetParamValueIntProc         g_SetParamValueInt = SetParamValueInt;
+
+ANSC_STATUS SetParamValueBool(char* pParamName,BOOL  bParamValue)
+{
+    parameterValStruct_t pVal[1];
+    char*                faultParam     = NULL;
+    int                  ret            = 0;
+    CCSP_MESSAGE_BUS_INFO *bus_info     = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+    char *str = bParamValue? "true" : "false";
+    pVal[0].parameterName  = pParamName;
+    pVal[0].parameterValue = str;
+    pVal[0].type           = ccsp_boolean;
+
+    /*?? check writeID need to be set*/
+    ret = CcspBaseIf_setParameterValues_rbus(
+                  bus_handle,
+                  NULL,
+                  NULL,
+                  0,
+                  0,
+                  pVal,
+                  1,
+                  TRUE,
+                  &faultParam
+              );
+
+    if (ret != CCSP_SUCCESS)
+    {
+        CcspTraceError(("%s - %d - Failed to set - Error [%s]\n", __FUNCTION__, __LINE__, faultParam));
+        bus_info->freefunc(faultParam);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+COSASetParamValueBoolProc          g_SetParamValueBool = SetParamValueBool;
+
+ANSC_STATUS GetInstanceNumbers (char*                      pObjName,
+		                ULONG*                     pInsList,
+				ULONG*                     pInsCnt)
+{
+    componentStruct_t       **compStructs = NULL;
+    int                     compNum = 0;   
+    parameterInfoStruct_t   **infoStructs = NULL;
+    int                     infoNum = 0;
+    char                    *peerCompId, *peerDbusPath;
+    int                     i;
+    ULONG                   tmp;
+
+    if (!pObjName && !pInsList && !pInsCnt)
+	return ANSC_STATUS_FAILURE;
+
+    /* Some destinations can be with multiple components,Not sure this is really
+     * needed, can be removed later*/
+    if (CcspBaseIf_discComponentSupportingNamespace_rbus(bus_handle,NULL,
+                pObjName,g_Subsystem, &compStructs, &compNum) != CCSP_SUCCESS)
+    {
+        CcspTraceError(("fail to find component: %s", pObjName));
+        return ANSC_STATUS_FAILURE;
+    }
+
+    if (compNum != 1)
+    {
+        CcspTraceError(("no component found (or too many): %s", pObjName));
+        free_componentStruct_t(bus_handle, compNum, compStructs);
+        return ANSC_STATUS_FAILURE;
+    }
+
+    peerCompId = compStructs[0]->componentName;
+    peerDbusPath = compStructs[0]->dbusPath;
+
+
+    if (CcspBaseIf_getParameterNames_rbus(bus_handle, peerCompId, peerDbusPath,
+            pObjName, TRUE, &infoNum, &infoStructs) != CCSP_SUCCESS)
+    {
+        CcspTraceError(("get instance list error: %s", pObjName));
+        free_componentStruct_t(bus_handle, compNum, compStructs);
+        return ANSC_STATUS_FAILURE;
+    }
+
+    for (i = 0; i < infoNum ; i++)
+    {
+        /*
+         * skip the path which is not an instance.
+         * A object prefix is like "IP.Device.Interface."
+         * and a instance is like "IP.Device.Interface.1."
+         * so the format of instance path must be "<prefix>.%d."
+         */
+        if (strncmp(infoStructs[i]->parameterName, pObjName, strlen(pObjName)) != 0
+                || sscanf(infoStructs[i]->parameterName + strlen(pObjName), "%lu.", &tmp) != 1)
+        {
+            CcspTraceWarning(("The path %s is not a instance", infoStructs[i]->parameterName));
+            continue;
+        }
+	pInsList[i] = tmp;
+     }
+     *pInsCnt = i;
+
+    free_parameterInfoStruct_t(bus_handle, infoNum, infoStructs);
+    free_componentStruct_t(bus_handle, compNum, compStructs);
+    return ANSC_STATUS_SUCCESS;
+}
+COSAGetInstanceNumbersProc         g_GetInstanceNumbers = GetInstanceNumbers;
+
+ULONG GetInstanceNumberByIndex ( void*  hDmlAgent,
+		                     char*  pObjName,ULONG ulIndex)
+{
+    UNREFERENCED_PARAMETER(hDmlAgent);	
+    componentStruct_t       **compStructs = NULL;
+    int                     compNum = 0;
+    parameterInfoStruct_t   **infoStructs = NULL;
+    char                    *peerCompId, *peerDbusPath;
+    int                     i,infoNum = 0;
+    ULONG                   tmp = 0,InstNum = 0;
+
+    if (!pObjName)
+        return ANSC_STATUS_FAILURE;
+
+    /* Some destinations can be with multiple components,Not sure this is really
+     * needed, can be removed later*/
+    if (CcspBaseIf_discComponentSupportingNamespace_rbus(bus_handle,NULL,
+                pObjName,g_Subsystem, &compStructs, &compNum) != CCSP_SUCCESS)
+    {
+        CcspTraceError(("fail to find component: %s", pObjName));
+        return ANSC_STATUS_FAILURE;
+    }
+
+    if (compNum != 1)
+    {
+        CcspTraceError(("no component found (or too many): %s", pObjName));
+        free_componentStruct_t(bus_handle, compNum, compStructs);
+        return ANSC_STATUS_FAILURE;
+    }
+
+    peerCompId = compStructs[0]->componentName;
+    peerDbusPath = compStructs[0]->dbusPath;
+
+
+    if (CcspBaseIf_getParameterNames_rbus(bus_handle, peerCompId, peerDbusPath,
+			   pObjName, TRUE, &infoNum, &infoStructs) != CCSP_SUCCESS)
+    {
+        CcspTraceError(("get instance list error: %s", pObjName));
+        free_componentStruct_t(bus_handle, compNum, compStructs);
+        return ANSC_STATUS_FAILURE;
+    }
+
+    for (i = 0; i < infoNum ; i++)
+    {
+        /*
+         * skip the path which is not an instance.
+         * A object prefix is like "IP.Device.Interface."
+         * and a instance is like "IP.Device.Interface.1."
+         * so the format of instance path must be "<prefix>.%d."
+         */
+        if (strncmp(infoStructs[i]->parameterName, pObjName, strlen(pObjName)) != 0
+                || sscanf(infoStructs[i]->parameterName + strlen(pObjName), "%lu.", &tmp) != 1)
+        {
+            CcspTraceWarning(("The path %s is not a instance", infoStructs[i]->parameterName));
+            continue;
+        }
+        if (i == (int)ulIndex+1)
+	{
+           CcspTraceWarning(("The path %s found instance %lu", infoStructs[i]->parameterName,tmp)); 		
+	   InstNum = tmp;
+	   break;
+	}
+     }
+
+    free_parameterInfoStruct_t(bus_handle, infoNum, infoStructs);
+    free_componentStruct_t(bus_handle, compNum, compStructs);
+    return InstNum;
+}
+COSAGetInstanceNumberByIndexProc   g_GetInstanceNumberByIndex = GetInstanceNumberByIndex;
+
+ANSC_STATUS
+GetParamValueByPathName
+    (
+        void*                       bus_handle,
+        parameterValStruct_t        *val,
+        ULONG                       *parameterValueLength
+    )
+{
+    char * dst_componentid =  NULL;
+    char * dst_pathname    =  NULL;
+    int size2;
+    int ret = 0;
+
+    parameterValStruct_t **parameterVal = NULL;
+
+    CcspTraceInfo(("Calling func:%s\n",__func__));
+
+
+    ret = CcspBaseIf_getParameterValues_rbus(
+        bus_handle,
+        dst_componentid,
+        dst_pathname,
+        &(val->parameterName),
+        1,
+        &size2,
+        &parameterVal
+    );
+
+    if ( ret == CCSP_SUCCESS  && size2 >= 1)
+    {
+        unsigned long len = strlen(parameterVal[0]->parameterValue);
+
+        if (len >= *parameterValueLength)
+        {
+            // AnscTraceWarning(("COSAGetParamValueByPathName: buf size error '%s'\n", val->parameterName));
+            memcpy(val->parameterValue, parameterVal[0]->parameterValue, *parameterValueLength - 1);
+            val->parameterValue[*parameterValueLength - 1] = 0;
+        }
+        else
+        {
+            memcpy(val->parameterValue, parameterVal[0]->parameterValue, len + 1);
+        }
+
+        *parameterValueLength = len;
+    }
+
+    if(parameterVal)
+      free_parameterValStruct_t(bus_handle, size2, parameterVal);
+
+    return ANSC_STATUS_SUCCESS;
+}
+
+COSAGetParamValueByPathNameProc    g_GetParamValueByPathNameProc = GetParamValueByPathName;
+
+#if 0
+ANSC_STATUS SetParamValueByPathName ( void*  bus_handle,
+                                      parameterValStruct_t       *val)
+{
+    char * dst_componentid =  NULL;
+    char * dst_pathname    =  NULL;
+    char * pFaultParameter = NULL;
+
+    int ret = 0;
+
+    ANSC_STATUS returnStatus = ANSC_STATUS_SUCCESS;
+    
+    ret = CcspBaseIf_setParameterValues_rbus(
+                bus_handle,
+                dst_componentid,
+                dst_pathname,
+                0,
+                0xFFFFFFFF,
+                val,
+                1,
+                1,
+                &pFaultParameter
+            );
+
+    if ( CCSP_SUCCESS != ret )
+    {
+        CcspTraceWarning(("SetValue failed with %d\n", ret));
+        returnStatus = ANSC_STATUS_BAD_NAME;
+    }
+
+    return  returnStatus;
+}
+COSASetParamValueByPathNameProc    g_SetParamValueByPathNameProc = SetParamValueByPathName;
+
+#endif
+
+#if 0
+/* Get parameter value API */
+ANSC_STATUS Rbus_GetParameterValue(const rbusHandle_t rbus_handle,  
+				   const char *pParamName, char *pStrVal)
+{
+    int                    ret = 0;
+    rbusValue_t            value;
+    rbusValueType_t        rbusValueType ;
+
+    /* rbus get parameter value */
+    if(rbus_handle == NULL)
+    {
+        return ANSC_STATUS_FAILURE;
+    }
+
+    /* Init rbus variable */
+    rbusValue_Init(&value);
+
+    /* Get the value of a single parameter */
+    ret = rbus_get(rbus_handle, pParamName, &value);
+
+    if(ret != RBUS_ERROR_SUCCESS )
+    {
+        CcspTraceError(("%s-%d Rbus Error code:%d\n",__FUNCTION__,__LINE__, ret));
+        return ANSC_STATUS_FAILURE;
+    }
+
+    rbusValueType = rbusValue_GetType(value);
+
+    /* Update the parameter value */
+    if(rbusValueType == RBUS_BOOLEAN)
+    {
+        if (rbusValue_GetBoolean(value)){
+	    pStrVal = calloc(strlen("true")+1,1);
+	    strncpy( pStrVal, "true", strlen( "true" ) + 1 );
+        } else {
+	    pStrVal = calloc(strlen("false")+1,1);
+	    strncpy( pStrVal, "false", strlen( "false" ) + 1 );
+        }
+    }
+    else
+    {
+        pStrVal = rbusValue_ToString(value, NULL, 0);
+    }
+
+    /* release rbus variable */
+    rbusValue_Release(value);
+    return ANSC_STATUS_SUCCESS;
+}
+#endif
+

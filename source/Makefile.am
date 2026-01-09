@@ -19,6 +19,6 @@
 if UNIT_TEST_DOCKER_SUPPORT
 SUBDIRS = test
 else
-SUBDIRS = TR-181 PandMSsp
+SUBDIRS = TR-181 rbus_wrappers PandMSsp
 endif
 

@@ -20,7 +20,7 @@ AM_CFLAGS =
 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libCcspPandM_comcast_sbapi.la
+noinst_LTLIBRARIES = libCcspPandM_comcast_sbapi.la libCcspPandM_comcast_sbapi_deviceinfo.la
 
 libCcspPandM_comcast_sbapi_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_ml \
                                          -I$(top_srcdir)/source/TR-181/middle_layer_src \
@@ -30,5 +30,15 @@ libCcspPandM_comcast_sbapi_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_ml 
                                          -I$(top_srcdir)/source/TR-181/include \
                                          -I$(top_srcdir)/source-arm/TR-181/board_include
 
-libCcspPandM_comcast_sbapi_la_SOURCES = cosa_deviceinfo_apis_custom.c cosa_x_cisco_com_hotspot_apis.c cosa_x_cisco_com_truestaticip_apis.c cosa_x_comcast-com_gre_apis.c cosa_x_cisco_com_gre_apis.c cosa_x_comcast_com_gre_apis.c
+libCcspPandM_comcast_sbapi_deviceinfo_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_ml \
+                                         -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                                         -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
+                                         -I$(top_srcdir)/custom/comcast \
+                                         -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
+                                         -I$(top_srcdir)/source/TR-181/include \
+                                         -I$(top_srcdir)/source-arm/TR-181/board_include
+
+libCcspPandM_comcast_sbapi_la_SOURCES = cosa_x_cisco_com_hotspot_apis.c cosa_x_cisco_com_truestaticip_apis.c cosa_x_comcast-com_gre_apis.c cosa_x_cisco_com_gre_apis.c cosa_x_comcast_com_gre_apis.c
+libCcspPandM_comcast_sbapi_deviceinfo_la_SOURCES = cosa_deviceinfo_apis_custom.c cosa_x_comcast_com_gre_apis.c
 libCcspPandM_comcast_sbapi_la_LDFLAGS = -lccsp_common
+libCcspPandM_comcast_sbapi_deviceinfo_la_LDFLAGS = -lccsp_common_lite

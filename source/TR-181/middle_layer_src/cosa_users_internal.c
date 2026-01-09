@@ -71,6 +71,7 @@
 #include "cosa_users_apis.h"
 #include "cosa_users_internal.h"
 #include "plugin_main_apis.h"
+#include "plugin_main_rbus.h"
 #include "poam_irepfo_interface.h"
 #include "sys_definitions.h"
 #include <syscfg/syscfg.h>
@@ -211,12 +212,13 @@ CosaUsersInitialize
         return returnStatus;
     }
 
+    CcspTraceInfo(("After Dml Init"));
     /* Initiation all functions */
     AnscSListInitializeHeader( &pMyObject->UserList );
     pMyObject->maxInstanceOfUser    = 0;
-    pMyObject->hIrepFolderUser      = NULL;
     AnscZeroMemory(pMyObject->AliasOfUser, sizeof(pMyObject->AliasOfUser));
 
+    pMyObject->hIrepFolderUser      = NULL;
     /*We need to get Instance Info from cosa configuration*/
     pPoamIrepFoCOSA = (PPOAM_IREP_FOLDER_OBJECT)g_GetRegistryRootFolder(g_pDslhDmlAgent);
 
@@ -226,6 +228,7 @@ CosaUsersInitialize
 
         goto  EXIT;
     }
+    CcspTraceInfo(("After root folder"));
 
     pPoamIrepFoUser = 
         (PPOAM_IREP_FOLDER_OBJECT)pPoamIrepFoCOSA->GetFolder
@@ -249,6 +252,7 @@ CosaUsersInitialize
         pPoamIrepFoCOSA->EnableFileSync((ANSC_HANDLE)pPoamIrepFoCOSA, TRUE);
 
     }
+    CcspTraceInfo(("After Get folder\n"));
 
     if ( !pPoamIrepFoUser )
     {
@@ -260,7 +264,6 @@ CosaUsersInitialize
     {
         pMyObject->hIrepFolderUser = (ANSC_HANDLE)pPoamIrepFoUser;
     }
-
     /* We need get NextInstanceNumber from backend. By the way, the whole tree 
             was created. Moreover, we also need get delay-added entry and put them
             into our tree. */
@@ -571,6 +574,24 @@ CosaUsersBackendGetUserInfo
 		//pUserCxtLink2                 = NULL;
             }            
         }
+	#ifdef CCSP_RBUS_MIGRATION
+        int rc = RBUS_ERROR_SUCCESS;
+        CcspTraceInfo(("Registring row:%ld\n",pUserCxtLink->InstanceNumber));
+        PRBUS_DATAMODEL_AGENT_OBJECT dmlagent = (PRBUS_DATAMODEL_AGENT_OBJECT)g_pDslhDmlAgent;
+        rc = rbusTable_registerRow(dmlagent->rbus_handle,"Device.Users.User." ,pUserCxtLink->InstanceNumber,
+                                                                                            NULL);
+        if(rc!= RBUS_ERROR_SUCCESS)
+        {
+            CcspTraceError(("\n%s %d - User Table (%s) Add failed, Error=%d \n",
+                                            __FUNCTION__, __LINE__,"Device.Users.User.",rc));
+            returnStatus = ANSC_STATUS_FAILURE;
+        }
+        else
+        {
+            CcspTraceInfo(("\n%s %d - URL Table (%s) Added Successfully\n",
+                                                __FUNCTION__, __LINE__, "Device.Users.User"));
+        }
+        #endif
     }
     
     /* Max InstanceNumber is changed. Save now.*/
@@ -661,10 +682,10 @@ CosaUsersRegGetUserInfo
                     COSA_DML_RR_NAME_UserNextInsNunmber,
                     NULL
                 );
-
         if ( pSlapVariable )
         {
             pMyObject->maxInstanceOfUser = pSlapVariable->Variant.varUint32;
+            CcspTraceInfo(("Folder count:%ld\n",pMyObject->maxInstanceOfUser));
 
             SlapFreeVariable(pSlapVariable);
         }
@@ -672,6 +693,7 @@ CosaUsersRegGetUserInfo
 
     /* enumerate user.{i} */
     ulEntryCount = pPoamIrepFoUser->GetFolderCount((ANSC_HANDLE)pPoamIrepFoUser);
+    CcspTraceInfo(("Folder count:%ld\n",ulEntryCount));
     for ( ulIndex = 0; ulIndex < ulEntryCount; ulIndex++ )
     {
         /* Get i in user.{i} */
@@ -779,6 +801,25 @@ CosaUsersRegGetUserInfo
 
         CosaSListPushEntryByInsNum(&pMyObject->UserList, (PCOSA_CONTEXT_LINK_OBJECT)pCosaUserContext);
 
+#ifdef CCSP_RBUS_MIGRATION
+	int rc = RBUS_ERROR_SUCCESS;
+	CcspTraceInfo(("Registring row:%ld\n",uInstanceNumber));
+	PRBUS_DATAMODEL_AGENT_OBJECT dmlagent = (PRBUS_DATAMODEL_AGENT_OBJECT)g_pDslhDmlAgent;
+	rc = rbusTable_registerRow(dmlagent->rbus_handle,"Device.Users.User." ,uInstanceNumber,
+                                                                                            NULL);
+        if(rc!= RBUS_ERROR_SUCCESS)
+        {
+            CcspTraceError(("\n%s %d - User Table (%s) Add failed, Error=%d \n",
+                                            __FUNCTION__, __LINE__,"Device.Users.User.",rc));
+            returnStatus = ANSC_STATUS_FAILURE;
+        }
+        else
+        {
+            CcspTraceInfo(("\n%s %d - URL Table (%s) Added Successfully\n",
+                                                __FUNCTION__, __LINE__, "Device.Users.User"));
+        }
+#endif
+
         /* release some memory */
         if (pAliasUser)
         {
@@ -786,8 +827,8 @@ CosaUsersRegGetUserInfo
             pAliasUser = NULL;
         }
         
-        pPoamIrepFoEnumUser->Remove((ANSC_HANDLE)pPoamIrepFoEnumUser);
-        pPoamIrepFoEnumUser = NULL;
+       // pPoamIrepFoEnumUser->Remove((ANSC_HANDLE)pPoamIrepFoEnumUser);
+       // pPoamIrepFoEnumUser = NULL;
     }
 
 
@@ -800,10 +841,10 @@ EXIT1:
     
     if(pAliasUser)
         AnscFreeMemory(pAliasUser);
-        
+#ifndef CCSP_RBUS_MIGRATION        
     if ( pPoamIrepFoEnumUser )
         pPoamIrepFoEnumUser->Remove((ANSC_HANDLE)pPoamIrepFoEnumUser);
-
+#endif
     return returnStatus;
 }
 

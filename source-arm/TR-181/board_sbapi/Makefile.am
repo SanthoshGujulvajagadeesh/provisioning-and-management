@@ -21,7 +21,7 @@ AM_CFLAGS += -DWBCFG_MULTI_COMP_SUPPORT
 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libCcspPandM_board_sbapi.la
+noinst_LTLIBRARIES = libCcspPandM_board_sbapi.la libCcspPandM_board_sbapi_users.la libCcspPandM_board_sbapi_deviceinfo.la
 
 libCcspPandM_board_sbapi_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi \
                                        -I$(top_srcdir)/source/TR-181/middle_layer_src \
@@ -34,12 +34,32 @@ libCcspPandM_board_sbapi_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi
                                        -I$(top_srcdir)/source-arm/TR-181/board_ml \
                                        -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)/rbus
 
+libCcspPandM_board_sbapi_users_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi \
+                                       -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_include \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
+                                       -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
+                                       -I$(top_srcdir)/custom/comcast \
+                                       -I$(top_srcdir)/source/TR-181/include \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)/rbus
+
+libCcspPandM_board_sbapi_deviceinfo_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi \
+                                       -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_include \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
+                                       -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
+                                       -I$(top_srcdir)/custom/comcast \
+                                       -I$(top_srcdir)/source/TR-181/include \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)/rbus
 libCcspPandM_board_sbapi_la_SOURCES = \
     cosa_bridging_apis.c \
     cosa_bridging_apis_ext.h \
     cosa_common_util.c \
     cosa_common_util.h \
-    cosa_deviceinfo_apis.c \
     cosa_dhcpv4_apis.c \
     cosa_dhcpv4_webconfig_apis.c \
     cosa_dhcpv6_apis.c \
@@ -50,7 +70,6 @@ libCcspPandM_board_sbapi_la_SOURCES = \
     cosa_ethernet_apis.c \
     cosa_ethernet_apis_ext.h \
     cosa_firewall_apis.c \
-    cosa_hosts_apis.c \
     cosa_ip_apis.c \
     cosa_lanmanagement_apis.c \
     cosa_nat_apis.c \
@@ -60,7 +79,6 @@ libCcspPandM_board_sbapi_la_SOURCES = \
     cosa_time_apis.c \
     cosa_upnp_apis.c \
     cosa_userinterface_apis.c \
-    cosa_users_apis.c \
     cosa_x_cisco_com_ddns_apis.c \
     cosa_x_cisco_com_devicecontrol_apis.c \
     cosa_x_cisco_com_diagnostics_apis.c \
@@ -87,6 +105,13 @@ libCcspPandM_board_sbapi_la_SOURCES += \
     cosa_neighdisc_apis.c
 endif
 
+libCcspPandM_board_sbapi_users_la_SOURCES = cosa_users_apis.c cosa_drg_common.c
+libCcspPandM_board_sbapi_deviceinfo_la_SOURCES = \
+    cosa_deviceinfo_apis.c \
+    cosa_common_util.c \
+    cosa_common_util.h \
+    cosa_drg_common.c
+
 if FEATURE_SUPPORT_MAPT_NAT46
 if !MAPT_UNIFICATION_ENABLED
 libCcspPandM_board_sbapi_la_SOURCES += cosa_mapt_apis.c
@@ -103,18 +128,25 @@ libCcspPandM_board_sbapi_la_SOURCES +=  \
     speedboost_scheduler_apis.c
 endif
 
-libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc -lHotspotApi
+libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc
+libCcspPandM_board_sbapi_users_la_LDFLAGS = -lccsp_common_lite -ltime_conversion -lwebconfig_framework -lmsgpackc
+libCcspPandM_board_sbapi_deviceinfo_la_LDFLAGS = -lccsp_common_lite -ltime_conversion -lwebconfig_framework -lmsgpackc
 
 if IS_LIBRDKCONFIG_ENABLED
 AM_CFLAGS += $(LIBRDKCONFIG_FLAG)
 libCcspPandM_board_sbapi_la_LDFLAGS += -lrdkconfig
+libCcspPandM_board_sbapi_users_la_LDFLAGS += -lrdkconfig
+libCcspPandM_board_sbapi_deviceinfo_la_LDFLAGS += -lrdkconfig
 endif
 
 if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_board_sbapi_la_LDFLAGS += -lnet
+libCcspPandM_board_sbapi_users_la_LDFLAGS +=-lnet
+libCcspPandM_board_sbapi_deviceinfo_la_LDFLAGS += -lnet
 endif
 
-libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc
 if FEATURE_HOTSPOT_SUPPORT
 libCcspPandM_board_sbapi_la_LDFLAGS += -lHotspotApi
+libCcspPandM_board_sbapi_users_la_LDFLAGS += -lHotspotApi
+libCcspPandM_board_sbapi_deviceinfo_la_LDFLAGS += -lHotspotApi
 endif

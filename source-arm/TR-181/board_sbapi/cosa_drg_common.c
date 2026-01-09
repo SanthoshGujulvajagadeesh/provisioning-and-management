@@ -80,7 +80,7 @@ int commonSyseventClose() {
     return retval;
 }
 
-
+#if 0
 int getOSStats(char* iface, POSStats stats)
 {
     COSA_DML_IF_STATS ifstat;
@@ -100,4 +100,5 @@ int getOSStats(char* iface, POSStats stats)
     stats->txMulticast  = ifstat.MulticastPacketsSent;
     return 0;
 }
+#endif
 #endif

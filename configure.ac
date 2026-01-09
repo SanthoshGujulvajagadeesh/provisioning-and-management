@@ -189,6 +189,7 @@ AC_CONFIG_FILES(
 	source/TR-181/middle_layer_src/Makefile
 	source/TR-181/integration_src.shared/Makefile
 	source/TR-181/Makefile
+    source/rbus_wrappers/Makefile
 	source/PandMSsp/Makefile
 	source/Makefile
 	Makefile

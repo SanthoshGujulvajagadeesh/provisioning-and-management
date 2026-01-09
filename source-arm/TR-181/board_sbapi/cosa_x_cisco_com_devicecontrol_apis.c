@@ -166,7 +166,7 @@ PCHAR g_avahi_daemon_conf[] =
 #endif //FEATURE_RDKB_CELLULAR_MANAGER
 
 extern ANSC_HANDLE bus_handle;
-char   dst_pathname_cr[64]  =  {0};
+extern char   dst_pathname_cr[64];
 static componentStruct_t **        ppComponents = NULL;
 extern char        g_Subsystem[32];
 
@@ -1549,6 +1549,7 @@ CosaDmlDcSetDeviceConfigIgnore
     return ANSC_STATUS_SUCCESS;
 }
 
+#if 0
 void*
 CosaDmlDcRebootWifi(ANSC_HANDLE   hContext)
 {
@@ -1634,6 +1635,7 @@ CosaDmlDcRebootWifi(ANSC_HANDLE   hContext)
 	}
 	return hContext;
 }
+#endif
 
 ANSC_STATUS
 CosaDmlDcResetBr0(char *ip, char *sub) {
@@ -1693,6 +1695,7 @@ static int openCommonSyseventConnection() {
 }
 #endif
 
+#if 0
 void* CosaDmlDcRestartRouter(void* arg)
 {
     pthread_detach(pthread_self());
@@ -1732,6 +1735,7 @@ void* CosaDmlDcRestartRouter(void* arg)
 #endif 
     return arg;      
 }
+#endif
 
 ANSC_STATUS
 CosaDmlDcSetRebootDevice
@@ -5058,6 +5062,7 @@ void* set_mesh_disabled(void* arg)
 
 }
 
+#if 0
 void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  )
 {
 #if ! defined (_DISABLE_WIFI_HEALTH_STATS_TO_NVRAM_)
@@ -5116,7 +5121,9 @@ void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  )
 
 #endif
 }
+#endif
 
+#if 0
 /* CheckAndGetDevicePropertiesEntry() */
 int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDevicePropContent )
 {
@@ -5156,6 +5163,7 @@ int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDeviceProp
     fclose( fp1 );
     return ret;
 }
+#endif
 
 BOOL IsPortInUse(unsigned int port)
 {

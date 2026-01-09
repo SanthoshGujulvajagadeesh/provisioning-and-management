@@ -21,7 +21,8 @@ AM_CFLAGS += -DWBCFG_MULTI_COMP_SUPPORT
 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libCcspPandM_middle_layer_src.la
+lib_LTLIBRARIES = libCcspPandM_plugin_rbus.la
+noinst_LTLIBRARIES = libCcspPandM_middle_layer_src.la libCcspPandM_middle_layer_src_users.la libCcspPandM_middle_layer_src_deviceinfo.la
 
 libCcspPandM_middle_layer_src_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/include \
                                             -I$(top_srcdir)/source/Custom \
@@ -34,6 +35,41 @@ libCcspPandM_middle_layer_src_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/includ
                                             -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
                                             -I$(top_srcdir)/source-arm/TR-181/board_ml
 
+libCcspPandM_middle_layer_src_users_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/include \
+                                            -I$(top_srcdir)/source/Custom \
+                                            -I$(top_srcdir)/source/TR-181/board_sbapi \
+                                            -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                                            -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
+                                            -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
+                                            -I$(top_srcdir)/custom/comcast \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_include \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_ml
+
+libCcspPandM_middle_layer_src_deviceinfo_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/include \
+                                            -I$(top_srcdir)/source/Custom \
+                                            -I$(top_srcdir)/source/TR-181/board_sbapi \
+                                            -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                                            -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
+                                            -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
+                                            -I$(top_srcdir)/custom/comcast \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_include \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_ml
+
+libCcspPandM_plugin_rbus_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/include \
+                                            -I$(top_srcdir)/source/Custom \
+                                            -I$(top_srcdir)/source/TR-181/board_sbapi \
+                                            -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                                            -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
+                                            -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
+                                            -I$(top_srcdir)/custom/comcast \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_include \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
+                                            -I$(top_srcdir)/source-arm/TR-181/board_ml
+
+libCcspPandM_middle_layer_src_users_la_CFLAGS = -DCCSP_RBUS_MIGRATION
+libCcspPandM_middle_layer_src_deviceinfo_la_CFLAGS = -DCCSP_RBUS_MIGRATION
 libCcspPandM_middle_layer_src_la_SOURCES = \
     array_helpers.c \
     cosa_advsec_utils.c \
@@ -42,8 +78,6 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     cosa_bridging_dml.c \
     cosa_bridging_internal.c \
     cosa_com_cisco_spvtg_ccsp_pam_dml.c \
-    cosa_deviceinfo_dml.c \
-    cosa_deviceinfo_internal.c \
     cosa_dhcpv4_dml.c \
     cosa_dhcpv4_internal.c \
     cosa_dhcpv6_dml.c \
@@ -66,8 +100,6 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     cosa_nat_dml.c \
     cosa_nat_dml_custom.c \
     cosa_nat_internal.c \
-    cosa_onboardlogging_dml.c \
-    cosa_onboardlogging_internal.c \
     cosa_ra_dml.c \
     cosa_ra_internal.c \
     cosa_rbus_handler_apis.c \
@@ -79,8 +111,6 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     cosa_upnp_internal.c \
     cosa_userinterface_dml.c \
     cosa_userinterface_internal.c \
-    cosa_users_dml.c \
-    cosa_users_internal.c \
     cosa_webconfig_api.c \
     cosa_x_cisco_com_ddns_dml.c \
     cosa_x_cisco_com_ddns_internal.c \
@@ -131,6 +161,27 @@ libCcspPandM_middle_layer_src_la_SOURCES += \
     cosa_neighdisc_internal.c
 endif
 
+libCcspPandM_middle_layer_src_users_la_SOURCES = \
+    cosa_users_dml.c \
+    cosa_users_internal.c \
+    cosa_apis_busutil.c \
+    cosa_apis_util.c
+
+libCcspPandM_middle_layer_src_deviceinfo_la_SOURCES = \
+    cosa_deviceinfo_dml.c \
+    cosa_deviceinfo_internal.c \
+    cosa_x_rdkcentral_com_videoservice_dml.c \
+    cosa_onboardlogging_dml.c \
+    cosa_onboardlogging_internal.c \
+    cosa_apis_util.c \
+    parodus_interface.c \
+    cosa_advsec_utils.c \
+    cosa_apis_busutil.c
+
+libCcspPandM_plugin_rbus_la_SOURCES = \
+    plugin_main_rbus.c \
+    plugin_main_rbus_apis.c
+
 if FEATURE_SUPPORT_MANAGE_WIFI
 libCcspPandM_middle_layer_src_la_SOURCES += cosa_managedwifi_dml.c \
     managedwifidoc.c \
@@ -146,7 +197,10 @@ libCcspPandM_middle_layer_src_la_SOURCES += \
     speedboost_apis.c
 endif
 
+libCcspPandM_plugin_rbus_la_LDFLAGS = -lccsp_common_lite -lmsgpackc -lwebconfig_framework -ldl
 libCcspPandM_middle_layer_src_la_LDFLAGS = -lccsp_common -lmsgpackc -lwebconfig_framework -lhal_platform
+libCcspPandM_middle_layer_src_users_la_LDFLAGS = -lccsp_common_lite -lmsgpackc -lwebconfig_framework
+libCcspPandM_middle_layer_src_deviceinfo_la_LDFLAGS = -lccsp_common_lite -lmsgpackc -lwebconfig_framework
 
 if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet

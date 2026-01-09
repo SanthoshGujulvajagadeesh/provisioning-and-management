@@ -31,7 +31,11 @@ CcspPandMSsp_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi \
                         -I$(top_srcdir)/source/TR-181/include \
                         -I$(top_srcdir)/source/Custom \
                         -I$(top_srcdir)/source-arm/TR-181/board_include \
-                        -I$(top_srcdir)/source-arm/TR-181/board_sbapi 
+                        -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
+                        -I$(top_srcdir)/source/TR-181/middle_layer_src \
+                        -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)/rtmessage
+#CcspPandMSsp_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c dm_pack_datamodel.c
+CcspPandMSsp_SOURCES = ssp_main_rbus.c
+CcspPandMSsp_LDFLAGS = -lrtMessage -ldl -rdynamic -lwebconfig_framework -ltelemetry_msgsender -lsecure_wrapper $(SYSTEMD_LDFLAGS) -lsyscfg -lpthread -lccsp_common_lite
 
-CcspPandMSsp_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c dm_pack_datamodel.c
-CcspPandMSsp_LDFLAGS = -lccsp_common -ldl -rdynamic -lwebconfig_framework -ltelemetry_msgsender -lsecure_wrapper $(SYSTEMD_LDFLAGS) -lsyscfg -lpthread
+#CcspPandMSsp_LDFLAGS += -ltr181 

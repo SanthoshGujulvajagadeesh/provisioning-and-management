@@ -77,6 +77,7 @@
 #include "rdkconfig.h"
 #endif
 #define SIZE_OF_HASHPASSWORD  32
+
 /* Changing SNO as 256 bytes from 64 bytes due to HAL layer access more than 64 byets*/
 static char SerialNumber[256] = {'\0'};
 #if ( defined _COSA_SIM_ )
@@ -808,4 +809,34 @@ CosaDmlUserResetPassword
    CcspTraceWarning(("%s, Returning Failure\n",__FUNCTION__));
    return ANSC_STATUS_FAILURE;
 } 
+
+ANSC_STATUS
+CosaDmlDiGetSerialNumber
+    (
+        ANSC_HANDLE                 hContext,
+        char*                       pValue,
+        ULONG*                      pulSize
+    )
+{
+    UNREFERENCED_PARAMETER(hContext);
+    UNREFERENCED_PARAMETER(pulSize);
+    UCHAR unitsn[128];
+    memset(unitsn,0,sizeof(unitsn));
+
+#if   (_COSA_INTEL_USG_ARM_ || _COSA_BCM_MIPS_)
+/*
+    if (platform_hal_GetSerialNumber(pValue) != RETURN_OK )
+        return ANSC_STATUS_FAILURE;
+*/
+    strcpy(pValue,"12345");
+
+    /* Remove trailing newline from Serial Number retrieved */
+    int len = strlen(pValue);
+    if ((len > 0) && (pValue[len-1] == '\n'))
+    {
+        pValue[len-1] = '\0';
+    }
+#endif
+    return ANSC_STATUS_SUCCESS;
+}
 

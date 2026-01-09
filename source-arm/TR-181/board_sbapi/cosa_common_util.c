@@ -68,13 +68,13 @@
 #include "cosa_apis_util.h"
 #if defined (WIFI_MANAGE_SUPPORTED)
 #include "ccsp_message_bus.h"
-#endif /*WIFI_MANAGE_SUPPORTED*/
 #include "ccsp_base_api.h"
+#endif /*WIFI_MANAGE_SUPPORTED*/
 #include "ccsp_psm_helper.h"
-#include "cosa_rbus_handler_apis.h"
 #include "safec_lib_common.h"
-#include "dslh_definitions_database.h"
+#include "syscfg/syscfg.h"
 #include "cosa_nat_apis.h"
+char   dst_pathname_cr[64]  =  {0};
 
 #define IPV6_PREFIX "Device.IP.Interface.1.IPv6Prefix.1.Prefix"
 #define IPV6_PREFIX_EVENT "tr_erouter0_dhcpv6_client_v6pref"
@@ -444,250 +444,6 @@ enum {EVENT_ERROR=-1, EVENT_OK, EVENT_TIMEOUT, EVENT_HANDLE_EXIT, EVENT_LAN_STAR
         EVENT_WAN_STARTED=0x20, EVENT_WAN_STOPPED,EVENT_WAN_IPV4_RECD=0x30, EVENT_WAN_IPV6_RECD,EVENT_IPV6_PREFIX_RECD};
 #endif
 
-#if defined (RBUS_WAN_IP)
-
-void*
-Set_Notifi_ParamName(arg_struct_t arguments)
-{
-    errno_t rc = -1;
-    char  str1[512] = {0};
-    FILE *file;
-    char *path = "/tmp/webpanotifyready";
-    bool WebpaNotifyReady= false;
-    char compo[256] = "eRT.com.cisco.spvtg.ccsp.webpaagent";
-    char bus[256] = "/com/cisco/spvtg/ccsp/webpaagent";
-    parameterValStruct_t value[1];
-
-    char* faultParam = NULL;
-    int ret = 0;
-
-    rc = sprintf_s(str1,sizeof(str1),"%s,%u,%s,%s,%d",arguments.parameterName, arguments.writeID, strlen(arguments.newValue)>0 ? arguments.newValue : "NULL", strlen(arguments.oldValue)>0 ? arguments.oldValue : "NULL", arguments.type);
-    CcspTraceInfo(("%s rc: %d, str1: %s\n", __FUNCTION__ , rc, str1));
-
-    if(rc < EOK)
-    {
-        ERR_CHK(rc);
-        CcspTraceError(("%s Failed to create event data. Returning :%d\n", __FUNCTION__, __LINE__));
-        goto EXIT;
-    }
-
-    value[0].parameterName = "Device.Webpa.X_RDKCENTRAL-COM_WebPA_Notification";
-    value[0].parameterValue = str1;
-    value[0].type = ccsp_string;
-    
-    //wait for 30s to update wan status and send notification
-    sleep(30);
-    CcspTraceInfo(("Sending notification after 30sec\n"));
-    /* Check if file exists. Wait for max 2 mins for WebPA to create the file
-     * and send the notification.
-     */
-    
-    for(int count=0; count<24; count++){
-        file = fopen(path, "rb");
-        if(file == NULL)
-        {
-            if(count%4==0){
-                CcspTraceWarning(("%s WebPA is not ready to receive notifications. Waiting for /tmp/webpanotifyready file: %d\n", __FUNCTION__, __LINE__));
-            }
-            sleep(5);
-        }
-        else{
-            WebpaNotifyReady=true;
-            fclose(file);
-            break;
-        }
-    }
-    if(!WebpaNotifyReady)
-    {
-        CcspTraceError(("/tmp/webpanotifyready file is not created even after 2 mins. WebPA is not ready to receive notifications. Exiting\n"));
-        goto EXIT;
-    }
-    else{
-        CcspTraceInfo(("%s /tmp/webpanotifyready file exists. WebPA is ready to receive notifications: %d\n", __FUNCTION__, __LINE__));
-    }
-
-    ret = CcspBaseIf_setParameterValues(  bus_handle,
-                                            compo,
-                                            bus,
-                                            0,
-                                            DSLH_MPA_ACCESS_CONTROL_PAM,
-                                            value,
-                                            1,
-                                            TRUE,
-                                            &faultParam );
-    
-    if (ret != CCSP_SUCCESS && faultParam)
-    {   
-        CcspTraceError(("%s CcspBaseIf_setParameterValues:Failed to SetValue for param '%s'\n", __FUNCTION__, faultParam));
-        CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
-        bus_info->freefunc(faultParam);
-    }
-    else
-    {
-        CcspTraceWarning(("%s: CcspBaseIf_setParameterValues: Param value set succesfully and sent to WebPA.\n", __FUNCTION__ ));
-    }
-  
-    EXIT:
-        CcspTraceWarning(("%s: CcspBaseIf_setParameterValues: Exit.\n", __FUNCTION__ ));
-        return NULL;
-}
-
-// Enqueue a notification
-bool enqueueNotification(arg_struct_t data) {
-    bool ret = false;
-    mqd_t mq;
-    struct mq_attr attr;
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = MAX_QUEUE_SIZE;
-    attr.mq_msgsize = MAX_MSG_SIZE;
-    attr.mq_curmsgs = 0;
-
-    CcspTraceInfo(("%s: Entry %d\n", __FUNCTION__,__LINE__));
-
-    mq = mq_open(WEBPA_NOTIFY_QUEUE , O_CREAT | O_WRONLY , 0644 , &attr);
-    if(mq == (mqd_t) -1) {
-        CcspTraceError(("%s: WebPA notification message queue open error \n", __FUNCTION__));
-        return true;
-    }
-
-    if(mq_send(mq, (const char *)&data , sizeof(arg_struct_t) , 0 ) == -1) {
-        CcspTraceError(("%s: Error on sending WebPr notification message queue \n", __FUNCTION__));
-        ret = true;
-    }
-    else {
-        CcspTraceInfo(("%s: Notification enqueued successfully\n", __FUNCTION__));
-    }
-
-    if(mq_close(mq) == -1) {
-        CcspTraceError(("%s: WebPA notification message queue close error \n", __FUNCTION__));
-        ret = false;
-    }
-    return ret;
-}
-
-void *SyncNotificationHandlerThread(void *arg) {
-    UNREFERENCED_PARAMETER(arg);
-    pthread_detach(pthread_self());
-
-    mqd_t mq;
-    struct mq_attr attr;
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = MAX_QUEUE_SIZE;
-    attr.mq_msgsize = MAX_MSG_SIZE;
-    attr.mq_curmsgs = 0;
-
-    while (true)
-    {
-        mq = mq_open(WEBPA_NOTIFY_QUEUE , O_CREAT | O_RDONLY, 0644, &attr);
-        if (mq == (mqd_t) -1)
-        {
-            CcspTraceError(("%s: WebPA notification message queue open error \n", __FUNCTION__));
-            return NULL;
-        }
-
-        CcspTraceInfo(("%s Waiting for the Message \n", __FUNCTION__));
-        arg_struct_t notification;
-        ssize_t bytes_read = mq_receive(mq , (char *)&notification , sizeof(arg_struct_t) , NULL);
-
-        if (bytes_read < 0)
-        {
-            CcspTraceError(("%s Error on message queue reading \n " , __FUNCTION__));
-        }
-        else
-	{
-            CcspTraceDebug(("%s processing the recieved message, call Set_Notifi_ParamName \n", __FUNCTION__));
-            // Call Set_Notifi_ParamName() to process the notification
-            Set_Notifi_ParamName(notification);
-	}
-        if(mq_close(mq) == -1)
-            CcspTraceError(("%s: WebPA notification message queue close error \n", __FUNCTION__));
-
-    }
-    return NULL;
-}
-
-/*
- * Create a thread to send notification webPA
- */
-void initializeNotificationHandler() {
-    pthread_t threadId;
-    if (pthread_create(&threadId, NULL, SyncNotificationHandlerThread, NULL) != 0) {
-        CcspTraceError(("Failed to create SyncNotificationHandlerThread\n"));
-    }
-    else
-        CcspTraceInfo(("%s: sync notification thread created \n", __FUNCTION__));
-}
-
-int Send_WebPANotification_prefix(char* parameterName, char *prefix, char *previous_prefix){
-    if((parameterName == NULL) || (prefix == NULL) || (previous_prefix == NULL))
-    {
-        CcspTraceError(("%s arguments are NULL\n", __FUNCTION__ ));
-        return EVENT_ERROR;
-    }
-
-    //pthread_t threadId;
-    arg_struct_t prefix_args;
-        CcspTraceInfo(("%s prefix_args is valid: %d \n", __FUNCTION__, __LINE__));
-        memset(&prefix_args, 0, sizeof(arg_struct_t));
-        strncpy(prefix_args.parameterName , parameterName , PARAM_NAME_LEN - 1);
-        prefix_args.writeID         = 256;
-        strncpy(prefix_args.newValue , prefix , VALUE_LEN - 1);
-        strncpy(prefix_args.oldValue , previous_prefix , VALUE_LEN - 1);
-        prefix_args.type            = ccsp_string;
-        CcspTraceInfo(("%s En queue the notification with arguments: %s,%u,%s,%s,%d, LINE: %d\n", __FUNCTION__, prefix_args.parameterName, prefix_args.writeID, prefix_args.newValue, prefix_args.oldValue, prefix_args.type,__LINE__));
-
-        if(enqueueNotification(prefix_args))
-        {
-            CcspTraceError(("%s: Error en queueing the notification for prefix %d\n", __FUNCTION__,__LINE__));
-            return EVENT_ERROR;
-        } else {
-            CcspTraceInfo(("%s: sent the notification to queue prefix %d\n", __FUNCTION__,__LINE__));
-        }
-    return(EVENT_OK);
-
-}
-
-int Send_WebPANotification_WANIP(char* parameterName, char *ip_addrs, char *previous_ip){
-    if((parameterName == NULL) || (ip_addrs == NULL) || (previous_ip == NULL))
-    {
-        CcspTraceError(("%s arguments are NULL\n", __FUNCTION__ ));
-        return EVENT_ERROR;
-    }
-
-    arg_struct_t wanip_args;
-
-    bool IPv6Flag = false;
-    if(strcmp(parameterName,PRIMARY_WAN_IPv6_ADDRESS)==0){
-        IPv6Flag=true;
-    }
-
-    CcspTraceInfo(("%s Notification sending for %s.\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4" ));
-
-    {
-        CcspTraceInfo(("%s wanip_args for %s is valid: %d \n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4", __LINE__));
-        memset(&wanip_args, 0, sizeof(arg_struct_t));
- 
-        strncpy(wanip_args.parameterName , parameterName , PARAM_NAME_LEN - 1);
-        wanip_args.writeID         = 256;
-        strncpy(wanip_args.newValue , ip_addrs , VALUE_LEN - 1);
-        strncpy(wanip_args.oldValue , previous_ip , VALUE_LEN - 1);
-        wanip_args.type            = ccsp_string;
-        CcspTraceInfo(("%s En Queue the notification with arguments: %s,%u,%s,%s,%d, LINE: %d\n", __FUNCTION__, wanip_args.parameterName, wanip_args.writeID, wanip_args.newValue, wanip_args.oldValue, wanip_args.type,__LINE__));
-
-        // Enqueue the notification
-        if(enqueueNotification(wanip_args))
-        {
-            CcspTraceError(("%s: Error en queueing the notification for %s\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4"));
-            return EVENT_ERROR;
-        } else {
-            CcspTraceInfo(("%s: updated the notfication into queue for %s\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4"));
-        }
-    }
-    return(EVENT_OK);
-}
-#endif /*RBUS_WAN_IP*/
-
-
 static void
 EvtDispterIpv6PrefixCallback( char *prefix )
 {
@@ -717,10 +473,6 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
     static char previous_ip[16] = "0.0.0.0";
 
-#if !defined (RBUS_WAN_IP)
-    UNREFERENCED_PARAMETER(previous_ip);
-#endif
-
 #ifdef DUAL_CORE_XB3
     CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__)); 
     CcspTraceInfo(("EvtDispterWanIpAddrsCallback - erouter0 IP = %s\n",ip_addrs));
@@ -739,68 +491,8 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
 	    sysevent_set(se_fd, token, "current_wan_ipaddr", ip_addrs, 0);
 	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
     }
-#if defined (RBUS_WAN_IP)
-    if (strcmp(previous_ip, ip_addrs) != 0) {
-        CcspTraceInfo(("%s New IPv4 address detected: %s, Previous IPv4 address: %s\n", __FUNCTION__, ip_addrs, previous_ip));
-
-        if (publishWanIpAddr(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip)== RBUS_ERROR_SUCCESS){
-            CcspTraceInfo(("%s publishWanIpAddr success for IPv4 : %d \n", __FUNCTION__,__LINE__)); 
-        }
-        else{
-            CcspTraceError(("%s publishWanIpAddr failed for IPv4 : %d \n", __FUNCTION__,__LINE__)); 
-        }
-  
-        int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip);
-        if(ret == EVENT_OK){
-            CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv4 and Set_Notifi_ParamName will be called. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
-        }
-        else{
-            CcspTraceError(("%s: Send_WebPANotification_WANIP failed for IPv4 %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
-        }
-        // Storing new IPv4 address
-        strncpy(previous_ip, ip_addrs, sizeof(previous_ip) - 1);
-     }
-     else
-     {
-        CcspTraceInfo(("%s IPv4 address remains the same: %s\n", __FUNCTION__, previous_ip));
-     }
-#endif /*RBUS_WAN_IP*/
 }
 
-#if defined (RBUS_WAN_IP)
-static void
-EvtDispterWanIpv6AddrsCallback(char *ip_addrs)
-{
-    static char previous_ipv6[40] = "::";
-
-    if (strcmp(previous_ipv6, ip_addrs) != 0) 
-    {
-        CcspTraceInfo(("%s New IPv6 address detected: %s, Previous IPv6 address: %s\n", __FUNCTION__, ip_addrs, previous_ipv6));
-      
-        if(publishWanIpAddr(PRIMARY_WAN_IPv6_ADDRESS, ip_addrs, previous_ipv6)== RBUS_ERROR_SUCCESS)
-        {
-            CcspTraceInfo(("%s publishWanIpAddr success for IPv6 : %d \n", __FUNCTION__,__LINE__)); 
-        }
-        else{
-            CcspTraceError(("%s publishWanIpAddr failed for IPv6 : %d \n", __FUNCTION__,__LINE__)); 
-        }
-
-        int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IPv6_ADDRESS, ip_addrs, previous_ipv6);
-        if(ret == EVENT_OK){
-            CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv6 and Set_Notifi_ParamName will be created. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
-        }
-        else{
-            CcspTraceError(("%s:  Send_WebPANotification_WANIP failed for IPv6 %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
-        }
-        //Storing new IPv6 address
-        strncpy(previous_ipv6, ip_addrs, sizeof(previous_ipv6) - 1);
-     }
-     else
-     {
-            CcspTraceInfo(("%s IPv6 address remains the same: %s\n", __FUNCTION__, previous_ipv6));
-     }
-}
-#endif /*RBUS_WAN_IP*/
 /*
  * Initialize sysevnt 
  *   return 0 if success and -1 if failture.
@@ -867,39 +559,6 @@ EvtDispterEventInits(void)
     }
 
     #endif
-
-#if defined (RBUS_WAN_IP)
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
-    if( TRUE == gIsLANULAFeatureSupport )
-    {
-        //register lan_ipaddr_v6 event
-        rc = sysevent_setnotification(se_fd, token, "lan_ipaddr_v6", &async_id[3]);
-        if (rc) {
-        return(EVENT_ERROR);
-        }
-    }
-    else
-    {
-        //register tr_erouter0_dhcpv6_client_v6addr event
-        rc = sysevent_setnotification(se_fd, token, "tr_erouter0_dhcpv6_client_v6addr", &async_id[3]);
-        if (rc) {
-        return(EVENT_ERROR);
-        }
-    }
-#elif defined (_HUB4_PRODUCT_REQ_) || defined (_SR213_PRODUCT_REQ_)
-    //register lan_ipaddr_v6 event
-    rc = sysevent_setnotification(se_fd, token, "lan_ipaddr_v6", &async_id[3]);
-    if (rc) {
-       return(EVENT_ERROR);
-    }
-#else
-    //register tr_erouter0_dhcpv6_client_v6addr event
-    rc = sysevent_setnotification(se_fd, token, "tr_erouter0_dhcpv6_client_v6addr", &async_id[3]);
-    if (rc) {
-       return(EVENT_ERROR);
-    }
-#endif
-#endif /*RBUS_WAN_IP*/
 
 #if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
 #if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
@@ -999,33 +658,6 @@ EvtDispterEventListen(void)
                 EvtDispterIpv6PrefixCallback(value_str);
                 ret = EVENT_IPV6_PREFIX_RECD;
             }
-#if defined (RBUS_WAN_IP)
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
-            else if(!strcmp(name_str, "lan_ipaddr_v6"))
-            {
-                EvtDispterWanIpv6AddrsCallback(value_str);
-                ret = EVENT_WAN_IPV6_RECD;
-            }
-
-            else if(!strcmp(name_str, "tr_erouter0_dhcpv6_client_v6addr"))
-            {
-                EvtDispterWanIpv6AddrsCallback(value_str);
-                ret = EVENT_WAN_IPV6_RECD;
-            }
-#elif defined (_HUB4_PRODUCT_REQ_) || defined (_SR213_PRODUCT_REQ_)
-            else if(!strcmp(name_str, "lan_ipaddr_v6"))
-            {
-                EvtDispterWanIpv6AddrsCallback(value_str);
-                ret = EVENT_WAN_IPV6_RECD;
-            }
-#else
-            else if(!strcmp(name_str, "tr_erouter0_dhcpv6_client_v6addr"))
-            {
-                EvtDispterWanIpv6AddrsCallback(value_str);
-                ret = EVENT_WAN_IPV6_RECD;
-            }
-#endif
-#endif /*RBUS_WAN_IP*/
 #if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
             else if(!strcmp(name_str, "valid_ula_address"))
             {
@@ -1082,9 +714,6 @@ EvtDispterEventClose(void)
     sysevent_rmnotification(se_fd, token, async_id[0]);
     sysevent_rmnotification(se_fd, token, async_id[1]);
     sysevent_rmnotification(se_fd, token, async_id[2]);
-#if defined (RBUS_WAN_IP)
-    sysevent_rmnotification(se_fd, token, async_id[3]);
-#endif /*RBUS_WAN_IP*/
 #if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
 #if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
     if( TRUE == gIsLANULAFeatureSupport )
@@ -1154,34 +783,6 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
     {
         EvtDispterWanIpAddrsCallback(evtValue);
     }
-#if defined (RBUS_WAN_IP)
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
-    if( TRUE == gIsLANULAFeatureSupport )
-    {
-        if ( 0 == sysevent_get(fd, token, "lan_ipaddr_v6", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
-        {
-            EvtDispterWanIpv6AddrsCallback(evtValue);
-        }
-    }
-    else
-    {
-        if ( 0 == sysevent_get(fd, token, "tr_erouter0_dhcpv6_client_v6addr", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
-        {
-            EvtDispterWanIpv6AddrsCallback(evtValue);
-        }
-    }
-#elif defined (_HUB4_PRODUCT_REQ_) || defined (_SR213_PRODUCT_REQ_)
-    if ( 0 == sysevent_get(fd, token, "lan_ipaddr_v6", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
-    {
-        EvtDispterWanIpv6AddrsCallback(evtValue);
-    }
-#else
-    if ( 0 == sysevent_get(fd, token, "tr_erouter0_dhcpv6_client_v6addr", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
-    {
-        EvtDispterWanIpv6AddrsCallback(evtValue);
-    }
-#endif
-#endif /*RBUS_WAN_IP*/
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
     if ( 0 == sysevent_get(fd, token, SYSEVENT_MAPT_CONFIG_FLAG, evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
     {
@@ -1238,10 +839,6 @@ EvtDispterEventHandler(void *arg)
                 break;
             case EVENT_IPV6_PREFIX_RECD:
                 break;
-#if defined (RBUS_WAN_IP)
-            case EVENT_WAN_IPV6_RECD:
-                break;
-#endif /*RBUS_WAN_IP*/
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
             case EVENT_VALID_ULA_ADDRESS:
                 ValidUlaHandleEventAsync();
@@ -1294,6 +891,229 @@ int executeCmd(char *cmd)
     return 0;
 }
 
+void*
+CosaDmlDcRebootWifi(ANSC_HANDLE   hContext)
+{
+	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+	fprintf(stderr, "WiFi is going to reboot\n");
+	pthread_detach(pthread_self());
+	CcspTraceWarning(("RebootDevice:WiFi is going to reboot now\n"));
+	int                         ret;
+	int                         size = 0;
+	componentStruct_t **        ppComponents = NULL;
+	char*   faultParam = NULL;
+	errno_t  safec_rc = -1;
+
+	safec_rc = sprintf_s(dst_pathname_cr, sizeof(dst_pathname_cr), "%s%s", g_Subsystem, CCSP_DBUS_INTERFACE_CR);
+	if(safec_rc < EOK)
+	{
+		ERR_CHK(safec_rc);
+	}
+
+	ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle,
+		    dst_pathname_cr,
+//		    "Device.WiFi.Radio.",
+		    "Device.WiFi.X_CISCO_COM_ResetRadios",
+		    g_Subsystem,        /* prefix */
+		    &ppComponents,
+		    &size);
+
+	if ( ret == CCSP_SUCCESS && size == 1)
+	{
+//	    parameterValStruct_t val[2] = { { "Device.WiFi.Radio.1.X_CISCO_COM_ApplySetting", "true", ccsp_boolean}, 
+//				            { "Device.WiFi.Radio.2.X_CISCO_COM_ApplySetting", "true", ccsp_boolean} };
+            parameterValStruct_t val[1] = { { "Device.WiFi.X_CISCO_COM_ResetRadios", "true", ccsp_boolean}};
+ 
+	    ret = CcspBaseIf_setParameterValues
+				(
+					bus_handle, 
+					ppComponents[0]->componentName, 
+					ppComponents[0]->dbusPath,
+					0, 0x0,   /* session id and write id */
+					(void*)&val, 
+//					2,
+                                        1, 
+					TRUE,   /* no commit */
+					&faultParam
+				);	
+
+		if (ret != CCSP_SUCCESS && faultParam)
+		{
+		    CcspTraceError(("RebootDevice:%s Failed to SetValue for param '%s'\n",__FUNCTION__,faultParam));
+		    bus_info->freefunc(faultParam);
+		} else {
+			char buf[12];
+			int wifiresetcount = 0;
+			syscfg_get( NULL, "wifi_reset_count", buf, sizeof(buf));
+			wifiresetcount = atoi(buf);
+			wifiresetcount++;
+			syscfg_set_u(NULL, "wifi_reset_count", wifiresetcount);
+
+			FILE *fp = NULL;
+			safec_rc = strcpy_s(buf, sizeof(buf), "date");
+			if(safec_rc != EOK)
+			{
+				ERR_CHK(safec_rc);
+			}
+			char buffer[50] = {0};
+			memset(buffer,0,sizeof(buffer));
+			fp = popen(buf, "r");
+			if( fp != NULL) {         
+			while(fgets(buffer, sizeof(buffer), fp)!=NULL){
+				buffer[strlen(buffer) - 1] = '\0';
+				syscfg_set(NULL, "latest_wifi_reset_time", buffer);
+			}
+				pclose(fp);
+			}
+
+			if (syscfg_commit() != 0) 
+			{
+				CcspTraceWarning(("syscfg_commit failed\n"));
+			}
+		    CcspTraceWarning(("WIFI_RESET_COUNT : %d Time : %s  \n",wifiresetcount,buffer));
+		}
+	    free_componentStruct_t(bus_handle, size, ppComponents);
+	}
+	return hContext;
+}
+
+void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  )
+{
+#if ! defined (_DISABLE_WIFI_HEALTH_STATS_TO_NVRAM_)
+
+	char acBoxType[ 16 ] = { 0 };
+
+	// Get BOX TYPE from device properties
+	if( 0 == CheckAndGetDevicePropertiesEntry( acBoxType, sizeof( acBoxType ),"BOX_TYPE" ) )
+	{
+		CcspTraceInfo(("%s - Box Type is %s \n",__FUNCTION__, acBoxType));
+
+		// If it is XB3 then we need to do RPC client operation to do further
+		// If it is non-XB3 then we need to do operation here itself
+		if( ( acBoxType[ 0 ] != '\0' ) && \
+			( 0 == strcmp( acBoxType, "XB3" ) )
+		  )
+		{
+			char acAtomArpingIP[ 64 ] = { 0 };
+			
+			if( 0 == CheckAndGetDevicePropertiesEntry( acAtomArpingIP, sizeof( acAtomArpingIP ),"ATOM_ARPING_IP" ) )
+			{
+				if ( acAtomArpingIP[ 0 ] != '\0' )
+				{
+					CcspTraceInfo(("%s Reported an ATOM IP of %s \n", __FUNCTION__, acAtomArpingIP));
+					
+					pid_t pid = fork( );
+				
+					if ( pid == -1 )
+					{
+						// error, failed to fork()
+					}
+					else if ( pid > 0 )
+					{
+						int status;
+						waitpid( pid, &status, 0 ); // wait here until the child completes
+					}
+					else
+					{
+						// we are the child
+						char *args[ ] = {"/usr/bin/rpcclient", acAtomArpingIP, "/bin/sh /usr/ccsp/wifi/wifivAPPercentage.sh", (char *) 0 };
+
+						CcspTraceInfo(("%s - Taking Backup of wifivAPPercentage\n",__FUNCTION__));
+						
+						execv( args[ 0 ], args );
+						_exit(EXIT_FAILURE);   // exec never returns
+					}
+				}
+			}
+		}
+		else
+		{
+			CcspTraceInfo(("%s - Taking Backup of wifivAPPercentage\n",__FUNCTION__));
+			system( "sh /usr/ccsp/wifi/wifivAPPercentage.sh" );
+		}
+	}
+
+#endif
+}
+
+int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDevicePropContent )
+{
+    FILE 	*fp1 		 = NULL;
+    char 	 buf[ 1024 ] = { 0 },
+	  		*urlPtr 	 = NULL;
+    int 	 ret		 = -1;
+
+    // Read the device.properties file 
+    fp1 = fopen( "/etc/device.properties", "r" );
+	
+    if ( NULL == fp1 ) 
+	{
+        CcspTraceError(("Error opening properties file! \n"));
+        return -1;
+    }
+
+    while ( fgets( buf, sizeof( buf ), fp1 ) != NULL ) 
+	{
+        // Look for Device Properties Passed Content
+        if ( strstr( buf, sDevicePropContent ) != NULL ) 
+		{
+            buf[strcspn( buf, "\r\n" )] = 0; // Strip off any carriage returns
+
+            // grab content from string(entry)
+            urlPtr = strstr( buf, "=" );
+            urlPtr++;
+			
+            strncpy( pOutput, urlPtr, size );
+			
+          ret=0;
+		  
+          break;
+        }
+    }
+
+    fclose( fp1 );
+    return ret;
+}
+
+void* CosaDmlDcRestartRouter(void* arg)
+{
+    pthread_detach(pthread_self());
+    system("sysevent set lan-stop");
+#if defined(_SR300_PRODUCT_REQ_)
+    /*Increase sleep time in ADA to allow wifi hal API's for FR to execute before reboot*/
+    sleep(5);
+#else
+    sleep(3);
+#endif
+    system("sysevent set lan_restart_required true");
+    system("sysevent set forwarding-restart");
+#if 0
+    int count = 0;
+    char statusValue[256] = {0};
+    while(1) {
+
+        if(commonSyseventFd == -1) {
+            openCommonSyseventConnection();
+        }
+        sleep(3);
+        /*lan-status event*/
+        if( 0 == sysevent_get(commonSyseventFd, commonSyseventToken, "lan-status", statusValue, sizeof(statusValue)) && '\0' != statusValue[0] )
+        {
+            if (0 == strncmp(statusValue, "stopped", strlen("stopped"))) {
+                CcspTraceWarning(("Lan is restarting \n"));
+                system("sysevent set forwarding-restart");
+                break;
+            }
+        }
+        if(count > 5) {
+            CcspTraceWarning(("Lan Restart Time Out\n"));
+            break;
+        }
+        count++;            
+    } 
+#endif 
+    return arg;      
+}
 
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
 void* RegenerateUla(void *arg)

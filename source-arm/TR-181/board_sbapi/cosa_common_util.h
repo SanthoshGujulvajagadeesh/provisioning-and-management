@@ -77,16 +77,6 @@
 #define PARAM_NAME_LEN 128
 #define VALUE_LEN      128
 
-#if defined (RBUS_WAN_IP)
-typedef struct{
-    char parameterName[PARAM_NAME_LEN];
-    unsigned int writeID;
-    char newValue[VALUE_LEN];
-    char oldValue[VALUE_LEN];
-    enum dataType_e type;
-}arg_struct_t;
-#endif /*RBUS_WAN_IP*/
-
 typedef enum {
     INPUT_SOURCE_TYPE_SYSCFG      = 1,
     INPUT_SOURCE_TYPE_SYSEVENT,
@@ -193,9 +183,12 @@ void * EvtDispterEventHandler(void *arg);
 int EvtDispterCheckEvtStatus(int fd, token_t token);
 /*Create a thread to handle the sysevent asynchronously*/
 void EvtDispterHandleEventAsync(void);
-#if defined (RBUS_WAN_IP)
-void free_args_struct(arg_struct_t *param);
-#endif
+
+void* CosaDmlDcRebootWifi(ANSC_HANDLE   hContext);
+void* CosaDmlDcRestartRouter(void* arg);
+void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  );
+int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDevicePropContent );
+
 unsigned char IsThisCurrentPartnerID( const char* pcPartnerID );
 unsigned char IsThisFeatureApplicable( const char* pcFeatureFlag, common_util_InputSourceType  enInputSourceType );
 #endif
