@@ -28,6 +28,7 @@ libCcspPandM_rbus_wrapper_users_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/rbus
                                        -I$(top_srcdir)/source/TR-181/middle_layer_src \
                                        -I$(top_srcdir)/source-arm/TR-181/board_include \
                                        -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
                                        -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
                                        -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
                                        -I$(top_srcdir)/custom/comcast \
@@ -41,6 +42,7 @@ libCcspPandM_rbus_wrapper_deviceinfo_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181
                                        -I$(top_srcdir)/source/TR-181/middle_layer_src \
                                        -I$(top_srcdir)/source-arm/TR-181/board_include \
                                        -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
                                        -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
                                        -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
                                        -I$(top_srcdir)/custom/comcast \
@@ -54,6 +56,7 @@ libCcspPandM_rbus_wrapper_common_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/rbu
                                        -I$(top_srcdir)/source/TR-181/middle_layer_src \
                                        -I$(top_srcdir)/source-arm/TR-181/board_include \
                                        -I$(top_srcdir)/source-arm/TR-181/board_ml \
+                                       -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
                                        -I$(top_srcdir)/custom/comcast/source/TR-181/custom_include \
                                        -I$(top_srcdir)/custom/comcast/source/TR-181/custom_ml \
                                        -I$(top_srcdir)/custom/comcast \
