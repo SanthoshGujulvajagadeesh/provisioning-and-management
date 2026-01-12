@@ -1017,6 +1017,7 @@ rbusError_t MessageBusSource_SetParamBoolValue_rbus(rbusHandle_t handle, rbusPro
       return rbus_helper_SetParamBoolValue(handle, opts, property, helperctxt);
 }
 
+/*
 static rbusError_t MTLS_GetParamBoolValue_rbus(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
     CcspRbusHelper_t helperctxt = {"NULL", NULL,NULL,NULL,
@@ -1034,6 +1035,7 @@ rbusError_t MTLS_SetParamBoolValue_rbus(rbusHandle_t handle, rbusProperty_t prop
                                       .setparam_cb.cb_SetParamBoolValue = MTLS_SetParamBoolValue,NULL,NULL,NULL};
       return rbus_helper_SetParamBoolValue(handle, opts, property, helperctxt);
 }
+*/
 
 static rbusError_t SelfHeal_GetParamUlongValue_rbus(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
@@ -2214,6 +2216,7 @@ rbusError_t SecureWebUI_SetParamStringValue_rbus(rbusHandle_t handle, rbusProper
       return rbus_helper_SetParamStringValue(handle, opts, property, helperctxt);
 }
 
+/*
 static rbusError_t UseXPKI_GetParamBoolValue_rbus(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
     CcspRbusHelper_t helperctxt = {"NULL", NULL,NULL,NULL,
@@ -2231,6 +2234,7 @@ rbusError_t UseXPKI_SetParamBoolValue_rbus(rbusHandle_t handle, rbusProperty_t p
                                       .setparam_cb.cb_SetParamBoolValue = UseXPKI_SetParamBoolValue,NULL,NULL,NULL};
       return rbus_helper_SetParamBoolValue(handle, opts, property, helperctxt);
 }
+*/
 
 static rbusError_t LnFUseXPKI_GetParamBoolValue_rbus(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
@@ -2796,7 +2800,7 @@ static rbusDataElement_t dataElements[277] = {
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Telemetry.ConfigURL", RBUS_ELEMENT_TYPE_PROPERTY, {Telemetry_GetParamStringValue_rbus, Telemetry_SetParamStringValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Telemetry.Version", RBUS_ELEMENT_TYPE_PROPERTY, {Telemetry_GetParamStringValue_rbus, Telemetry_SetParamStringValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Telemetry.MessageBusSource.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {MessageBusSource_GetParamBoolValue_rbus, MessageBusSource_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
-        {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Telemetry.MTLS.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {MTLS_GetParamBoolValue_rbus, MTLS_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
+        //{"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Telemetry.MTLS.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {MTLS_GetParamBoolValue_rbus, MTLS_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SoftwareProcessManager.SelfHeal.AggressiveInterval", RBUS_ELEMENT_TYPE_PROPERTY, {SelfHeal_GetParamUlongValue_rbus, SelfHeal_SetParamUlongValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.UPnP.Refactor.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {UPnPRefactor_GetParamBoolValue_rbus, UPnPRefactor_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.hwHealthTest.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {HwHealthTestEnable_GetParamBoolValue_rbus, HwHealthTestEnable_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
@@ -2874,7 +2878,7 @@ static rbusDataElement_t dataElements[277] = {
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MACsecRequired.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {MACsecRequired_GetParamBoolValue_rbus, MACsecRequired_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SecureWebUI.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {SecureWebUI_GetParamBoolValue_rbus, SecureWebUI_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SecureWebUI.LocalFqdn", RBUS_ELEMENT_TYPE_PROPERTY, {SecureWebUI_GetParamStringValue_rbus, SecureWebUI_SetParamStringValue_rbus, NULL, NULL, NULL, NULL}},
-        {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.UseXPKI.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {UseXPKI_GetParamBoolValue_rbus, UseXPKI_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
+        //{"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.UseXPKI.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {UseXPKI_GetParamBoolValue_rbus, UseXPKI_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.LnFUseXPKI.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {LnFUseXPKI_GetParamBoolValue_rbus, LnFUseXPKI_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CrashUpload.S3SigningUrl", RBUS_ELEMENT_TYPE_PROPERTY, {CrashUpload_GetParamStringValue_rbus, CrashUpload_SetParamStringValue_rbus, NULL, NULL, NULL, NULL}},
         {"Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MTLS.mTlsLogUpload.Enable", RBUS_ELEMENT_TYPE_PROPERTY, {mTlsLogUpload_GetParamBoolValue_rbus, mTlsLogUpload_SetParamBoolValue_rbus, NULL, NULL, NULL, NULL}},

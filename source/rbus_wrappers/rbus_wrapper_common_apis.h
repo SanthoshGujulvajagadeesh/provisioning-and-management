@@ -10,5 +10,5 @@ rbusError_t rbus_helper_SetParamIntValue(rbusHandle_t handle, rbusSetHandlerOpti
 rbusError_t rbus_helper_SetParamBoolValue(rbusHandle_t handle, rbusSetHandlerOptions_t* opts, rbusProperty_t property, CcspRbusHelper_t helperctxt);
 rbusError_t rbus_helper_SetParamUlongValue(rbusHandle_t handle, rbusSetHandlerOptions_t* opts, rbusProperty_t property, CcspRbusHelper_t helperctxt);
 rbusError_t rbus_helper_SetParamStringValue(rbusHandle_t handle, rbusSetHandlerOptions_t* opts, rbusProperty_t property, CcspRbusHelper_t helperctxt);
-
+static void *GetTableInstance_and_param(rbusProperty_t property, CcspRbusHelper_t helperctxt, char *out_param);
 #endif
