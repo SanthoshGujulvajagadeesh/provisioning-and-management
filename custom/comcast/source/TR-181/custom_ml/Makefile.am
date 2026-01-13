@@ -44,4 +44,4 @@ libCcspPandM_comcast_ml_la_SOURCES = \
     cosa_x_comcast-com_gre_dml.c \
     cosa_x_comcast-com_gre_internal.c
 
-libCcspPandM_comcast_ml_la_LDFLAGS = -lccsp_common
+libCcspPandM_comcast_ml_la_LDFLAGS = -lccsp_common_lite

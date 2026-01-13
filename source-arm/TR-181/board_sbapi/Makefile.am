@@ -103,7 +103,7 @@ libCcspPandM_board_sbapi_la_SOURCES +=  \
     speedboost_scheduler_apis.c
 endif
 
-libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc -lHotspotApi
+libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common_lite -ltime_conversion -lwebconfig_framework -lmsgpackc -lHotspotApi
 
 if IS_LIBRDKCONFIG_ENABLED
 AM_CFLAGS += $(LIBRDKCONFIG_FLAG)
@@ -114,7 +114,7 @@ if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_board_sbapi_la_LDFLAGS += -lnet
 endif
 
-libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc
+libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common_lite -ltime_conversion -lwebconfig_framework -lmsgpackc
 if FEATURE_HOTSPOT_SUPPORT
 libCcspPandM_board_sbapi_la_LDFLAGS += -lHotspotApi
 endif

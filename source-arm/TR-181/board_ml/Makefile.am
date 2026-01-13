@@ -32,4 +32,4 @@ libCcspPandM_board_ml_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_ml \
                                     -I$(top_srcdir)/source-arm/TR-181/board_ml
 
 libCcspPandM_board_ml_la_SOURCES = cosa_x_cisco_com_filetransfer_internal.c
-libCcspPandM_board_ml_la_LDFLAGS = -lccsp_common
+libCcspPandM_board_ml_la_LDFLAGS = -lccsp_common_lite

@@ -31,4 +31,4 @@ libCcspPandM_integration_src_shared_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/
                                                   -I$(top_srcdir)/source-arm/TR-181/board_include
 
 libCcspPandM_integration_src_shared_la_SOURCES = cosa_ethernet_apis_multilan.c cosa_ip_apis_multilan.c cosa_x_cisco_com_multilan_apis.c
-libCcspPandM_integration_src_shared_la_LDFLAGS = -lccsp_common
+libCcspPandM_integration_src_shared_la_LDFLAGS = -lccsp_common_lite
